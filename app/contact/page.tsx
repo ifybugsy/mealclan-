@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, MapPin, Phone, Mail } from 'lucide-react';
+import { ArrowLeft, MapPin, Phone, Mail, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ContactPage() {
@@ -18,6 +18,25 @@ export default function ContactPage() {
     message: '',
   });
   const [loading, setLoading] = useState(false);
+  const [whatsappNumber, setWhatsappNumber] = useState('');
+
+  useEffect(() => {
+    // Fetch WhatsApp number from settings
+    const fetchSettings = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+        const response = await fetch(`${apiUrl}/settings`);
+        const data = await response.json();
+        if (data.whatsappNumber) {
+          setWhatsappNumber(data.whatsappNumber);
+        }
+      } catch (error) {
+        console.error('Failed to fetch WhatsApp number:', error);
+      }
+    };
+
+    fetchSettings();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -46,6 +65,16 @@ export default function ContactPage() {
       toast.error('An error occurred. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleWhatsAppContact = () => {
+    if (whatsappNumber) {
+      const message = `Hi, I have a question about MealClan. ${formData.message || 'Please get in touch with me.'}`;
+      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+    } else {
+      toast.error('WhatsApp number not available. Please try the contact form instead.');
     }
   };
 
@@ -183,6 +212,22 @@ export default function ContactPage() {
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-1">Email</h3>
                     <p className="text-gray-600">hello@mealclan.com</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex gap-4 mb-4">
+                    <MessageCircle className="w-6 h-6 text-green-500 flex-shrink-0" />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 mb-2">WhatsApp</h3>
+                      <p className="text-gray-600 text-sm mb-4">Chat with us directly on WhatsApp for quick responses</p>
+                      <Button onClick={handleWhatsAppContact} className="w-full text-white bg-green-600 hover:bg-green-700">
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                        Open WhatsApp
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

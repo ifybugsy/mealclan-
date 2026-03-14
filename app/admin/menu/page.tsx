@@ -23,6 +23,7 @@ export default function MenuManagement() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [fileName, setFileName] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -84,6 +85,7 @@ export default function MenuManagement() {
       }
 
       setFormData({ name: '', description: '', price: '', category: 'Main Course', image: '', available: true });
+      setFileName('');
       setEditingId(null);
       setShowForm(false);
       fetchItems();
@@ -127,6 +129,8 @@ export default function MenuManagement() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setFileName(file.name);
+
     const formDataObj = new FormData();
     formDataObj.append('file', file);
 
@@ -149,7 +153,7 @@ export default function MenuManagement() {
           <h1 className="text-3xl font-bold">Menu Items</h1>
           <p className="text-gray-600">Manage your restaurant menu</p>
         </div>
-        <Button onClick={() => { setShowForm(!showForm); setEditingId(null); }}>
+        <Button onClick={() => { setShowForm(!showForm); setEditingId(null); setFileName(''); }}>
           <Plus className="w-4 h-4 mr-2" />
           Add Item
         </Button>
@@ -197,12 +201,17 @@ export default function MenuManagement() {
                 </div>
                 <div>
                   <label className="text-sm font-medium">Image</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="w-full"
-                  />
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="w-full"
+                    />
+                    {fileName && (
+                      <span className="text-sm text-green-600 whitespace-nowrap">✓ {fileName}</span>
+                    )}
+                  </div>
                   {formData.image && (
                     <div className="mt-2 relative h-24 w-24">
                       <Image
@@ -229,7 +238,7 @@ export default function MenuManagement() {
                 <Button type="submit">
                   {editingId ? 'Update' : 'Create'} Item
                 </Button>
-                <Button variant="outline" onClick={() => { setShowForm(false); setEditingId(null); }}>
+                <Button variant="outline" onClick={() => { setShowForm(false); setEditingId(null); setFileName(''); }}>
                   Cancel
                 </Button>
               </div>

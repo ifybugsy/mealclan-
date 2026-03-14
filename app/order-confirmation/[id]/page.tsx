@@ -203,29 +203,45 @@ export default function OrderConfirmationPage() {
               </div>
             )}
 
-            <div className="bg-purple-50 border border-purple-200 rounded p-2 sm:p-4">
-              <p className="font-semibold text-purple-900 mb-1 sm:mb-2 text-xs sm:text-sm">Contact Restaurant</p>
-              <p className="text-[10px] sm:text-xs text-purple-800 mb-2 sm:mb-3">
-                Send a message to the restaurant to confirm your order:
-              </p>
-              <div className="flex gap-1 sm:gap-2">
-                <Button
-                  size="sm"
-                  className="flex-1 text-[10px] sm:text-xs md:text-sm h-8 sm:h-9 md:h-10"
-                  onClick={handleWhatsAppMessage}
-                >
-                  <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                  <span className="hidden xs:inline">WhatsApp</span>
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="text-[10px] sm:text-xs md:text-sm h-8 sm:h-9 md:h-10"
-                  onClick={handleCopyWhatsApp}
-                >
-                  <Copy className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                  {copied ? 'Copied!' : 'Copy'}
-                </Button>
+            <div className="bg-purple-50 border border-purple-200 rounded p-2 sm:p-4 space-y-3">
+              <div>
+                <p className="font-semibold text-purple-900 mb-1 sm:mb-2 text-xs sm:text-sm">Important: Screenshots Required</p>
+                <p className="text-[10px] sm:text-xs text-purple-800">
+                  Please take a screenshot of this order confirmation and payment receipt (if applicable), then send both to WhatsApp to confirm your order.
+                </p>
+              </div>
+
+              <div className="bg-white p-2 sm:p-3 rounded border border-purple-200">
+                <p className="font-semibold text-purple-900 mb-1 text-[10px] sm:text-xs">Steps to Confirm:</p>
+                <ol className="text-[9px] sm:text-[10px] text-purple-800 space-y-1 list-decimal list-inside">
+                  <li>Screenshot this confirmation page</li>
+                  <li>Screenshot your payment receipt (if bank transfer)</li>
+                  <li>Send both screenshots to our WhatsApp number below</li>
+                </ol>
+              </div>
+
+              <div>
+                <p className="font-semibold text-purple-900 mb-2 text-xs sm:text-sm">Contact Restaurant</p>
+                <div className="flex gap-1 sm:gap-2">
+                  <Button
+                    size="sm"
+                    className="flex-1 text-[10px] sm:text-xs md:text-sm h-8 sm:h-9 md:h-10"
+                    onClick={handleWhatsAppMessage}
+                  >
+                    <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                    <span className="hidden xs:inline">Send via WhatsApp</span>
+                    <span className="xs:hidden">WhatsApp</span>
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-[10px] sm:text-xs md:text-sm h-8 sm:h-9 md:h-10"
+                    onClick={handleCopyWhatsApp}
+                  >
+                    <Copy className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                    {copied ? 'Copied!' : 'Copy'}
+                  </Button>
+                </div>
               </div>
             </div>
           </CardContent>

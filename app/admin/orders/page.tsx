@@ -12,11 +12,15 @@ interface Order {
   orderNumber: string;
   customerName: string;
   customerPhone: string;
+  customerEmail: string;
   totalPrice: number;
   status: string;
   paymentStatus: string;
   createdAt: string;
   items: Array<{ name: string; quantity: number; price: number }>;
+  specialInstructions?: string;
+  deliveryType?: string;
+  deliveryAddress?: string;
 }
 
 const statusColors: Record<string, string> = {
@@ -137,6 +141,24 @@ export default function OrdersPage() {
                     ))}
                   </ul>
                 </div>
+
+                {order.deliveryType && (
+                  <div>
+                    <p className="text-sm font-medium mb-1">Delivery:</p>
+                    <p className="text-sm text-gray-600 capitalize">
+                      {order.deliveryType === 'delivery' && order.deliveryAddress 
+                        ? `Delivery to: ${order.deliveryAddress}` 
+                        : 'Pickup at Restaurant'}
+                    </p>
+                  </div>
+                )}
+
+                {order.specialInstructions && (
+                  <div className="bg-amber-50 border border-amber-200 rounded p-3">
+                    <p className="text-sm font-medium mb-1 text-amber-900">Special Instructions:</p>
+                    <p className="text-sm text-amber-800">{order.specialInstructions}</p>
+                  </div>
+                )}
 
                 <div className="max-w-xs">
                   <p className="text-sm font-medium mb-2">Update Status:</p>

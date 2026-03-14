@@ -159,9 +159,9 @@ export function usePendingOrdersCount() {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    // Count orders that are not completed or cancelled
+    // Count only active orders: pending and confirmed status
     const pendingCount = orders.filter(
-      (order) => order.status !== 'completed' && order.status !== 'cancelled'
+      (order) => order.status === 'pending' || order.status === 'confirmed'
     ).length;
     setCount(pendingCount);
   }, [orders]);
