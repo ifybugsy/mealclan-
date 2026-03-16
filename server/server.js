@@ -26,10 +26,10 @@ const httpServer = createServer(app);
 // CORS configuration for both Socket.io and Express
 const corsOrigins = [
   process.env.FRONTEND_URL || 'http://localhost:3000',
-  'http://localhost:3001',
-  'http://localhost:3002',
-  'http://localhost:3003',
-  'http://localhost:3004',
+  'https://mealclan.online',
+  'https://www.mealclan.com',
+  'https://mealclan.vercel.app',
+  'http://localhost:3000',
   'http://127.0.0.1:3000',
   'http://127.0.0.1:3001',
   'http://127.0.0.1:3002',
@@ -149,7 +149,7 @@ async function start() {
 
     const PORT = process.env.PORT || 3001;
     httpServer.listen(PORT, () => {
-      console.log(`[v0] Server running on http://localhost:${PORT}`);
+      console.log(`[v0] Server running on ${PORT}`);
     });
   } catch (error) {
     console.error('[v0] Failed to start server:', error.message);
