@@ -8,8 +8,8 @@ export function initializeSocket(): Socket {
   }
 
   const socketUrl = typeof window !== 'undefined' 
-    ? (process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001')
-    : 'http://localhost:3001';
+    ? (process.env.NEXT_PUBLIC_SOCKET_URL || 'https://mealclan.online')
+    : 'https://www.mealclan.online';
   
   socket = io(socketUrl, {
     reconnection: true,

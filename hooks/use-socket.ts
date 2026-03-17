@@ -51,7 +51,7 @@ export function useRealTimeOrders(
     // Fetch initial orders
     const fetchOrders = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://mealclan.online';
         const response = await fetch(`${apiUrl}/orders`);
         const data = await response.json();
         const orderList = Array.isArray(data) ? data : [];
@@ -112,7 +112,7 @@ export function useRealTimeDashboardStats(
     // Fetch initial stats
     const fetchStats = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://mealclan.online';
         const response = await fetch(`${apiUrl}/orders`);
         const data = await response.json();
         const orders = Array.isArray(data) ? data : [];
