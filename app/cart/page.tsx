@@ -126,84 +126,114 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Navigation */}
-      <nav className="bg-white border-b sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 h-16 sm:h-20 md:h-28 flex items-center justify-between">
-          <Link href="/store" className="flex items-center gap-1 sm:gap-2 text-gray-600 hover:text-gray-900 text-xs sm:text-sm md:text-base">
-            <ArrowLeft className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4" />
+      <nav className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 h-16 sm:h-20 md:h-24 flex items-center justify-between gap-4">
+          <Link href="/store" className="flex items-center gap-1.5 sm:gap-2 text-gray-600 hover:text-blue-600 transition-colors text-xs sm:text-sm md:text-base font-medium">
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
             <span className="hidden sm:inline">Back to Menu</span>
             <span className="sm:hidden">Back</span>
           </Link>
+          
           <Link href="/" className="flex-shrink-0">
-            <Image src="/logo.png" alt="MealClan Logo" width={80} height={80} className="w-auto h-auto max-w-[45px] sm:max-w-[60px] md:max-w-[80px]" />
+            <Image src="/logo.png" alt="MealClan Logo" width={80} height={80} className="w-auto h-auto max-w-[40px] sm:max-w-[50px] md:max-w-[70px]" />
           </Link>
+
+          <div className="text-right text-xs sm:text-sm">
+            <p className="font-bold text-gray-900">Your Cart</p>
+          </div>
         </div>
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-6 md:mb-8">Your Cart</h1>
+      <main className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8 md:py-10">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">Your Cart</h1>
+          <p className="text-sm text-gray-600 mt-2">Review and complete your order</p>
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Cart Items */}
-          <div className="lg:col-span-2 space-y-2 sm:space-y-3 md:space-y-4">
+          <div className="lg:col-span-2">
             {cart.length === 0 ? (
-              <Card>
-                <CardContent className="text-center py-6 sm:py-8">
-                  <p className="text-gray-600 mb-3 sm:mb-4 text-sm sm:text-base">Your cart is empty</p>
+              <Card className="bg-white border border-gray-200">
+                <CardContent className="text-center py-12 sm:py-16">
+                  <div className="mb-4">
+                    <svg className="w-16 h-16 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Cart is Empty</h3>
+                  <p className="text-gray-600 text-sm mb-6">Start by adding some delicious items from our menu</p>
                   <Link href="/store">
-                    <Button size="sm" className="text-xs sm:text-sm">Browse Menu</Button>
+                    <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white">
+                      Browse Menu
+                    </Button>
                   </Link>
                 </CardContent>
               </Card>
             ) : (
-              cart.map((item) => (
-                <Card key={item._id}>
-                  <CardContent className="p-2 sm:p-3 md:p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-3 md:gap-4">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-xs sm:text-sm md:text-base line-clamp-2">{item.name}</h3>
-                      <p className="text-xs sm:text-sm md:text-base text-gray-600">₦{item.price} each</p>
-                      <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 mt-0.5">
-                        Subtotal: ₦{(item.price * item.quantity).toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1 sm:gap-2 md:gap-4 w-full sm:w-auto">
-                      <div className="flex items-center gap-0.5 sm:gap-1 md:gap-2">
+              <div className="space-y-3 sm:space-y-4">
+                {cart.map((item) => (
+                  <div
+                    key={item._id}
+                    className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex gap-4">
+                      {/* Item Details */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-sm sm:text-base text-gray-900 line-clamp-2">
+                          {item.name}
+                        </h3>
+                        <p className="text-sm text-gray-600 mt-1">₦{item.price.toLocaleString()} each</p>
+                        <p className="text-xs sm:text-sm text-blue-600 font-semibold mt-2">
+                          Subtotal: ₦{(item.price * item.quantity).toLocaleString()}
+                        </p>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex flex-col items-end gap-3">
+                        {/* Quantity Controls */}
+                        <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() =>
+                              updateQuantity(item._id, Math.max(1, item.quantity - 1))
+                            }
+                            className="h-7 w-7 p-0"
+                          >
+                            <Minus className="w-3.5 h-3.5" />
+                          </Button>
+                          <span className="font-semibold w-6 text-center text-sm">
+                            {item.quantity}
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => updateQuantity(item._id, item.quantity + 1)}
+                            className="h-7 w-7 p-0"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+
+                        {/* Delete Button */}
                         <Button
                           size="sm"
-                          variant="outline"
-                          onClick={() =>
-                            updateQuantity(item._id, Math.max(1, item.quantity - 1))
-                          }
-                          className="h-6 sm:h-7 md:h-8 w-6 sm:w-7 md:w-8 p-0"
+                          variant="ghost"
+                          onClick={() => removeFromCart(item._id)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8"
                         >
-                          <Minus className="w-2.5 sm:w-3 md:w-4 h-2.5 sm:h-3 md:h-4" />
-                        </Button>
-                        <span className="font-semibold w-4 sm:w-5 md:w-6 text-center text-xs sm:text-sm md:text-base">
-                          {item.quantity}
-                        </span>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => updateQuantity(item._id, item.quantity + 1)}
-                          className="h-6 sm:h-7 md:h-8 w-6 sm:w-7 md:w-8 p-0"
-                        >
-                          <Plus className="w-2.5 sm:w-3 md:w-4 h-2.5 sm:h-3 md:h-4" />
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          <span className="text-xs">Remove</span>
                         </Button>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => removeFromCart(item._id)}
-                        className="text-red-600 h-6 sm:h-7 md:h-8 w-6 sm:w-7 md:w-8 p-0"
-                      >
-                        <Trash2 className="w-3 sm:w-3.5 md:w-4 h-3 sm:h-3.5 md:h-4" />
-                      </Button>
                     </div>
-                  </CardContent>
-                </Card>
-              ))
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 

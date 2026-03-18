@@ -28,11 +28,13 @@ export default function MenuManagement() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const CATEGORIES = ['Rice', 'Soup', 'Pepper Soup', 'Drinks', 'Swallows', 'Sides', 'Desserts', 'Beverages'];
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     price: '',
-    category: 'Main Course',
+    category: 'Rice',
     image: '',
     available: true,
     finished: false,
@@ -309,14 +311,13 @@ export default function MenuManagement() {
                 <div>
                   <label className="text-sm font-medium">Category</label>
                   <select
-                    className="w-full px-3 py-2 border rounded-md"
+                    className="w-full px-3 py-2 border rounded-md bg-white"
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   >
-                    <option>Main Course</option>
-                    <option>Sides</option>
-                    <option>Beverages</option>
-                    <option>Desserts</option>
+                    {CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
                   </select>
                 </div>
                 <div>

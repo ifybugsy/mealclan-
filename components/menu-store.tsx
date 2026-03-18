@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { Button } from './ui/button';
-import { Card, CardContent } from './ui/card';
-import { Plus, Minus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { initializeSocket } from '@/lib/socket';
+import { ItemDetailModal } from './item-detail-modal';
+import { useRouter } from 'next/navigation';
 
 interface MenuItem {
   _id: string;
@@ -14,6 +15,8 @@ interface MenuItem {
   price: number;
   category: string;
   image: string;
+  available: boolean;
+  finished?: boolean;
 }
 
 interface CartItem extends MenuItem {
@@ -24,11 +27,16 @@ interface MenuStoreProps {
   onAddToCart: (item: CartItem) => void;
 }
 
+// Define standard categories
+const STANDARD_CATEGORIES = ['Rice', 'Soup', 'Pepper Soup', 'Drinks', 'Swallows', 'Sides', 'Desserts', 'Beverages'];
+
 export function MenuStore({ onAddToCart }: MenuStoreProps) {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [loading, setLoading] = useState(true);
-  const [cartItems, setCartItems] = useState<Record<string, number>>({});
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     fetchItems();
@@ -38,7 +46,6 @@ export function MenuStore({ onAddToCart }: MenuStoreProps) {
 
     // Legacy event handlers
     const handleMenuUpdate = (data: { itemId: string; changes: Record<string, any> }) => {
-      console.log('[v0] Menu update received:', data);
       setItems((prev) =>
         prev.map((item) =>
           item._id === data.itemId ? { ...item, ...data.changes } : item
@@ -47,23 +54,19 @@ export function MenuStore({ onAddToCart }: MenuStoreProps) {
     };
 
     const handleMenuDelete = (data: { itemId: string }) => {
-      console.log('[v0] Menu item deleted:', data);
       setItems((prev) => prev.filter((item) => item._id !== data.itemId));
     };
 
     const handleMenuAdd = (data: MenuItem) => {
-      console.log('[v0] Menu item added:', data);
       setItems((prev) => [data, ...prev]);
     };
 
     // Real-time event handlers
     const handleMenuItemAdded = (data: { item: MenuItem; timestamp: string }) => {
-      console.log('[MenuStore] Real-time item added:', data.item._id);
       setItems((prev) => [data.item, ...prev]);
     };
 
     const handleMenuItemUpdated = (data: { itemId: string; item: MenuItem; timestamp: string }) => {
-      console.log('[MenuStore] Real-time item updated:', data.itemId);
       setItems((prev) =>
         prev.map((item) =>
           item._id === data.itemId ? data.item : item
@@ -72,7 +75,6 @@ export function MenuStore({ onAddToCart }: MenuStoreProps) {
     };
 
     const handleMenuItemDeleted = (data: { itemId: string; timestamp: string }) => {
-      console.log('[MenuStore] Real-time item deleted:', data.itemId);
       setItems((prev) => prev.filter((item) => item._id !== data.itemId));
     };
 
@@ -101,7 +103,8 @@ export function MenuStore({ onAddToCart }: MenuStoreProps) {
       const menuItems = Array.isArray(data) ? data : [];
       setItems(menuItems);
       if (menuItems.length > 0) {
-        setSelectedCategory(menuItems[0].category);
+        const firstCategory = menuItems[0].category;
+        setSelectedCategory(firstCategory);
       }
     } catch (error) {
       console.error('Failed to fetch items:', error);
@@ -114,24 +117,26 @@ export function MenuStore({ onAddToCart }: MenuStoreProps) {
   const categories = items && items.length > 0 
     ? [...new Set(items.map((item) => item.category))]
     : [];
+  
   const filteredItems = selectedCategory && items && items.length > 0
-    ? items.filter((item) => item.category === selectedCategory)
-    : items;
+    ? items.filter((item) => item.category === selectedCategory && !item.finished)
+    : items.filter((item) => !item.finished);
 
-  const handleAddToCart = (item: MenuItem) => {
-    const newQuantity = (cartItems[item._id] || 0) + 1;
-    setCartItems({ ...cartItems, [item._id]: newQuantity });
-    onAddToCart({ ...item, quantity: newQuantity });
+  const handleOpenModal = (item: MenuItem) => {
+    setSelectedItem(item);
+    setIsModalOpen(true);
   };
 
-  const handleRemoveFromCart = (itemId: string) => {
-    const newQuantity = (cartItems[itemId] || 1) - 1;
-    if (newQuantity <= 0) {
-      const newCart = { ...cartItems };
-      delete newCart[itemId];
-      setCartItems(newCart);
-    } else {
-      setCartItems({ ...cartItems, [itemId]: newQuantity });
+  const handleAddToCart = (quantity: number) => {
+    if (selectedItem) {
+      onAddToCart({ ...selectedItem, quantity });
+    }
+  };
+
+  const handleCheckout = (quantity: number) => {
+    if (selectedItem) {
+      onAddToCart({ ...selectedItem, quantity });
+      router.push('/cart');
     }
   };
 
@@ -140,76 +145,116 @@ export function MenuStore({ onAddToCart }: MenuStoreProps) {
   }
 
   return (
-    <div className="space-y-3 sm:space-y-4 md:space-y-6">
-      {/* Category Filter */}
-      <div className="flex gap-1 sm:gap-1.5 md:gap-2 overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0">
-        {categories.map((category) => (
-          <Button
-            key={category}
-            variant={selectedCategory === category ? 'default' : 'outline'}
-            onClick={() => setSelectedCategory(category)}
-            className="whitespace-nowrap text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
-            size="sm"
-          >
-            {category}
-          </Button>
-        ))}
+    <div className="space-y-4 sm:space-y-6">
+      {/* Category Filter - Modern Chip Design */}
+      <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
+        {categories.length > 0 ? (
+          categories.map((category) => (
+            <Button
+              key={category}
+              onClick={() => setSelectedCategory(category)}
+              variant={selectedCategory === category ? 'default' : 'outline'}
+              className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                selectedCategory === category
+                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md'
+                  : 'bg-white border border-gray-300 text-gray-700 hover:border-gray-400'
+              }`}
+            >
+              {category}
+            </Button>
+          ))
+        ) : null}
       </div>
 
-      {/* Menu Items Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
+      {/* Menu Items Grid - Modern Card Design */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filteredItems.length === 0 ? (
-          <p className="col-span-full text-center text-gray-500 py-8 text-sm">No items in this category</p>
+          <div className="col-span-full flex flex-col items-center justify-center py-16 px-4">
+            <div className="text-gray-400 mb-4">
+              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6m0 0v6m0-6h6m0 0h6m0-6a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <p className="text-gray-600 text-center text-sm">No items available in this category</p>
+          </div>
         ) : (
           filteredItems.map((item) => (
-            <Card key={item._id} className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col">
-              {item.image && (
-                <div className="relative h-24 sm:h-32 md:h-40 lg:h-48 w-full">
+            <div
+              key={item._id}
+              onClick={() => handleOpenModal(item)}
+              className="group relative bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer border border-gray-200 hover:border-blue-300"
+            >
+              {/* Image Container */}
+              <div className="relative h-48 w-full bg-gray-100 overflow-hidden">
+                {item.image ? (
                   <Image
                     src={item.image}
                     alt={item.name}
                     fill
-                    className="object-cover"
+                    className="object-cover group-hover:scale-110 transition-transform duration-300"
                   />
-                </div>
-              )}
-              <CardContent className="p-2 sm:p-3 md:p-4 flex-1 flex flex-col justify-between">
-                <div>
-                  <h3 className="font-semibold text-sm sm:text-base md:text-lg line-clamp-2">{item.name}</h3>
-                  <p className="text-[11px] sm:text-xs md:text-sm text-gray-600 mt-0.5 sm:mt-1 line-clamp-2">{item.description}</p>
-                </div>
-                <div className="flex justify-between items-center mt-2 sm:mt-3 md:mt-4">
-                  <span className="text-lg sm:text-xl md:text-2xl font-bold">₦{item.price}</span>
-                  <div className="flex items-center gap-0.5 sm:gap-1 md:gap-2">
-                    {cartItems[item._id] > 0 && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleRemoveFromCart(item._id)}
-                        className="h-6 sm:h-7 md:h-8 w-6 sm:w-7 md:w-8 p-0"
-                      >
-                        <Minus className="w-2.5 sm:w-3 md:w-3" />
-                      </Button>
-                    )}
-                    {cartItems[item._id] > 0 && (
-                      <span className="font-semibold w-4 text-center text-xs sm:text-sm">
-                        {cartItems[item._id]}
-                      </span>
-                    )}
-                    <Button
-                      size="sm"
-                      onClick={() => handleAddToCart(item)}
-                      className="h-6 sm:h-7 md:h-8 w-6 sm:w-7 md:w-8 p-0"
-                    >
-                      <Plus className="w-2.5 sm:w-3 md:w-3" />
-                    </Button>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
+                    <span className="text-gray-400 text-sm">No image</span>
                   </div>
+                )}
+
+                {/* Category Badge */}
+                <div className="absolute top-3 right-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
+                  {item.category}
                 </div>
-              </CardContent>
-            </Card>
+
+                {/* Status Badges */}
+                {!item.available && (
+                  <div className="absolute top-3 left-3 bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full shadow-md">
+                    Unavailable
+                  </div>
+                )}
+              </div>
+
+              {/* Content Section */}
+              <div className="p-4 h-40">
+                <h3 className="font-bold text-lg text-gray-900 line-clamp-2 mb-1">
+                  {item.name}
+                </h3>
+
+                <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+                  {item.description}
+                </p>
+
+                {/* Price and Action */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent pt-8 px-4 pb-4 flex items-center justify-between">
+                  <span className="text-2xl font-bold text-blue-600">
+                    ₦{item.price.toLocaleString()}
+                  </span>
+                  <Button
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-full h-10 w-10 p-0 flex items-center justify-center shadow-md"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenModal(item);
+                    }}
+                  >
+                    <Plus className="w-5 h-5" />
+                  </Button>
+                </div>
+              </div>
+            </div>
           ))
         )}
       </div>
+
+      {/* Item Detail Modal */}
+      <ItemDetailModal
+        item={selectedItem}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedItem(null);
+        }}
+        onAddToCart={handleAddToCart}
+        onCheckout={handleCheckout}
+      />
     </div>
   );
 }
