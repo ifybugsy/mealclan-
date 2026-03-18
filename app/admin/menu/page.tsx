@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Trash2, Edit2 } from 'lucide-react';
+import { Plus, Trash2, Edit2, Clock } from 'lucide-react';
 import Image from 'next/image';
 import { initializeSocket } from '@/lib/socket';
 
@@ -16,6 +16,7 @@ interface MenuItem {
   category: string;
   image: string;
   available: boolean;
+  finished?: boolean;
 }
 
 export default function MenuManagement() {
@@ -34,6 +35,7 @@ export default function MenuManagement() {
     category: 'Main Course',
     image: '',
     available: true,
+    finished: false,
   });
 
   useEffect(() => {
@@ -123,7 +125,7 @@ export default function MenuManagement() {
       }
 
       // Reset form
-      setFormData({ name: '', description: '', price: '', category: 'Main Course', image: '', available: true });
+      setFormData({ name: '', description: '', price: '', category: 'Main Course', image: '', available: true, finished: false });
       setFileName('');
       setEditingId(null);
       setShowForm(false);
@@ -181,9 +183,46 @@ export default function MenuManagement() {
       category: item.category,
       image: item.image,
       available: item.available,
+      finished: item.finished || false,
     });
     setEditingId(item._id);
     setShowForm(true);
+  };
+
+  const handleToggleFinished = async (id: string, currentStatus: boolean) => {
+    try {
+      const socket = initializeSocket();
+      const newStatus = !currentStatus;
+      
+      const response = await fetch(`/api/menu/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ finished: newStatus }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update item status');
+      }
+
+      const updatedItem = await response.json();
+      
+      if (socket.connected) {
+        socket.emit('menuItemUpdated', { 
+          itemId: id, 
+          item: updatedItem,
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      setItems((prev) =>
+        prev.map((item) =>
+          item._id === id ? { ...item, finished: newStatus } : item
+        )
+      );
+    } catch (error) {
+      console.error('Failed to toggle finished status:', error);
+      setUploadError(error instanceof Error ? error.message : 'Failed to update status');
+    }
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -224,12 +263,12 @@ export default function MenuManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Menu Items</h1>
-          <p className="text-gray-600">Manage your restaurant menu</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Menu Items</h1>
+          <p className="text-sm sm:text-base text-gray-600">Manage your restaurant menu</p>
         </div>
-        <Button onClick={() => { setShowForm(!showForm); setEditingId(null); setFileName(''); }}>
+        <Button onClick={() => { setShowForm(!showForm); setEditingId(null); setFileName(''); }} className="w-full sm:w-auto">
           <Plus className="w-4 h-4 mr-2" />
           Add Item
         </Button>
@@ -356,55 +395,108 @@ export default function MenuManagement() {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {loading ? (
-          <p>Loading...</p>
+          <p className="col-span-full text-center text-gray-500">Loading...</p>
         ) : items.length === 0 ? (
           <p className="col-span-full text-center text-gray-500">No menu items yet</p>
         ) : (
           items.map((item) => (
-            <Card key={item._id}>
-              {item.image && (
-                <div className="relative h-48 w-full">
+            <div
+              key={item._id}
+              className={`group relative bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border ${
+                item.finished ? 'opacity-60 border-gray-300' : 'border-gray-200'
+              }`}
+            >
+              {/* Image Container */}
+              <div className="relative h-40 w-full bg-gray-100 overflow-hidden">
+                {item.image ? (
                   <Image
                     src={item.image}
                     alt={item.name}
                     fill
-                    className="object-cover"
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
                   />
-                </div>
-              )}
-              <CardContent className="pt-4">
-                <h3 className="font-semibold text-lg">{item.name}</h3>
-                <p className="text-sm text-gray-600 mt-1">{item.description}</p>
-                <div className="mt-4 space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold text-xl">₦{item.price?.toLocaleString()}</span>
-                    <span className="text-xs px-2 py-1 bg-gray-100 rounded">{item.category}</span>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
+                    <span className="text-gray-400 text-xs">No image</span>
                   </div>
+                )}
+                
+                {/* Status Badge */}
+                <div className="absolute top-2 right-2 flex gap-2">
+                  {item.finished && (
+                    <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                      Finished
+                    </span>
+                  )}
+                  {!item.available && (
+                    <span className="bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                      Unavailable
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="p-3 sm:p-4">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <h3 className="font-bold text-sm sm:text-base text-gray-900 line-clamp-2">
+                    {item.name}
+                  </h3>
+                  <span className="text-xs font-semibold px-2 py-1 bg-blue-100 text-blue-700 rounded whitespace-nowrap">
+                    {item.category}
+                  </span>
+                </div>
+
+                <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 mb-3">
+                  {item.description}
+                </p>
+
+                <div className="mb-3 pb-3 border-b border-gray-100">
+                  <span className="text-lg sm:text-xl font-bold text-gray-900">
+                    ₦{item.price?.toLocaleString()}
+                  </span>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleToggleFinished(item._id, item.finished || false)}
+                    className={`w-full text-xs sm:text-sm ${
+                      item.finished
+                        ? 'bg-gray-500 hover:bg-gray-600'
+                        : 'bg-orange-500 hover:bg-orange-600'
+                    } text-white`}
+                  >
+                    <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                    {item.finished ? 'Available Again' : 'Mark Finished'}
+                  </Button>
+                  
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleEdit(item)}
-                      className="flex-1"
+                      className="flex-1 text-xs sm:text-sm"
                     >
-                      <Edit2 className="w-4 h-4 mr-1" />
+                      <Edit2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                       Edit
                     </Button>
                     <Button
                       variant="destructive"
                       size="sm"
                       onClick={() => handleDelete(item._id)}
-                      className="flex-1"
+                      className="flex-1 text-xs sm:text-sm"
                     >
-                      <Trash2 className="w-4 h-4 mr-1" />
+                      <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                       Delete
                     </Button>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))
         )}
       </div>

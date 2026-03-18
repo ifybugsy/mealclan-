@@ -41,6 +41,7 @@ export async function PATCH(
           category: body.category,
           image: body.image,
           available: body.available,
+          finished: body.finished !== undefined ? body.finished : false,
           updatedAt: new Date(),
         },
       },

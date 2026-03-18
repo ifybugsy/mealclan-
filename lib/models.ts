@@ -8,6 +8,7 @@ export interface MenuItem {
   category: string;
   image: string;
   available: boolean;
+  finished?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }

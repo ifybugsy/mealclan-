@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
       category: body.category || 'Main Course',
       image: body.image || '',
       available: body.available !== false,
+      finished: body.finished || false,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
