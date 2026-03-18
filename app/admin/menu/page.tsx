@@ -26,6 +26,7 @@ export default function MenuManagement() {
   const [fileName, setFileName] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -54,6 +55,14 @@ export default function MenuManagement() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validate required fields
+    if (!formData.name || !formData.price) {
+      setUploadError('Name and price are required');
+      return;
+    }
+
+    setSubmitting(true);
+
     const payload = {
       ...formData,
       price: parseFloat(formData.price),
@@ -70,6 +79,12 @@ export default function MenuManagement() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to update item');
+        }
+
         const updatedItem = await response.json();
         
         // Emit socket event for real-time update to all clients
@@ -88,7 +103,14 @@ export default function MenuManagement() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to create item');
+        }
+
         const newItem = await response.json();
+        console.log('[MenuManagement] Item created:', newItem);
         
         // Emit socket event for real-time add to all clients
         if (socket.connected) {
@@ -100,26 +122,39 @@ export default function MenuManagement() {
         }
       }
 
+      // Reset form
       setFormData({ name: '', description: '', price: '', category: 'Main Course', image: '', available: true });
       setFileName('');
       setEditingId(null);
       setShowForm(false);
       setUploadError(null);
-      fetchItems();
+      
+      // Fetch updated items
+      await fetchItems();
     } catch (error) {
       console.error('[MenuManagement] Failed to save menu item:', error);
       setUploadError(error instanceof Error ? error.message : 'Failed to save item');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure?')) return;
+    if (!confirm('Are you sure you want to delete this item?')) return;
 
     try {
       const socket = initializeSocket();
       console.log('[MenuManagement] Deleting item:', id);
       
-      await fetch(`/api/menu/${id}`, { method: 'DELETE' });
+      const response = await fetch(`/api/menu/${id}`, { method: 'DELETE' });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete item');
+      }
+
+      const deletedItem = await response.json();
+      console.log('[MenuManagement] Item deleted:', id);
       
       // Emit socket event for real-time delete to all clients
       if (socket.connected) {
@@ -129,8 +164,9 @@ export default function MenuManagement() {
         });
         console.log('[MenuManagement] Emitted menuItemDeleted:', id);
       }
-      
-      fetchItems();
+
+      // Update local state immediately
+      setItems((prev) => prev.filter((item) => item._id !== id));
     } catch (error) {
       console.error('[MenuManagement] Failed to delete menu item:', error);
       setUploadError(error instanceof Error ? error.message : 'Failed to delete item');
@@ -292,10 +328,26 @@ export default function MenuManagement() {
                 />
               </div>
               <div className="flex gap-2">
-                <Button type="submit">
-                  {editingId ? 'Update' : 'Create'} Item
+                <Button type="submit" disabled={submitting || uploading}>
+                  {submitting ? (
+                    <>
+                      <span className="inline-block w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      {editingId ? 'Updating...' : 'Creating...'}
+                    </>
+                  ) : (
+                    <>{editingId ? 'Update' : 'Create'} Item</>
+                  )}
                 </Button>
-                <Button variant="outline" onClick={() => { setShowForm(false); setEditingId(null); setFileName(''); }}>
+                <Button 
+                  variant="outline" 
+                  disabled={submitting || uploading}
+                  onClick={() => { 
+                    setShowForm(false); 
+                    setEditingId(null); 
+                    setFileName('');
+                    setUploadError(null);
+                  }}
+                >
                   Cancel
                 </Button>
               </div>
@@ -323,25 +375,31 @@ export default function MenuManagement() {
                 </div>
               )}
               <CardContent className="pt-4">
-                <h3 className="font-semibold">{item.name}</h3>
+                <h3 className="font-semibold text-lg">{item.name}</h3>
                 <p className="text-sm text-gray-600 mt-1">{item.description}</p>
-                <div className="flex justify-between items-center mt-4">
-                  <span className="font-bold text-lg">₦{item.price}</span>
+                <div className="mt-4 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-xl">₦{item.price?.toLocaleString()}</span>
+                    <span className="text-xs px-2 py-1 bg-gray-100 rounded">{item.category}</span>
+                  </div>
                   <div className="flex gap-2">
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
                       onClick={() => handleEdit(item)}
+                      className="flex-1"
                     >
-                      <Edit2 className="w-4 h-4" />
+                      <Edit2 className="w-4 h-4 mr-1" />
+                      Edit
                     </Button>
                     <Button
-                      variant="ghost"
+                      variant="destructive"
                       size="sm"
                       onClick={() => handleDelete(item._id)}
-                      className="text-red-600"
+                      className="flex-1"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Delete
                     </Button>
                   </div>
                 </div>
