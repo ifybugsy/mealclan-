@@ -2,33 +2,67 @@ import { io, Socket } from 'socket.io-client';
 
 let socket: Socket | null = null;
 
+function getSocketUrl(): string {
+  if (typeof window === 'undefined') {
+    return 'http://localhost:3001';
+  }
+
+  // Check for explicit environment variable first
+  if (process.env.NEXT_PUBLIC_SOCKET_URL) {
+    return process.env.NEXT_PUBLIC_SOCKET_URL;
+  }
+
+  // Auto-detect from current window location
+  const { protocol, hostname, port } = window.location;
+  
+  // For production (when accessed via HTTPS)
+  if (protocol === 'https:') {
+    // If on a domain like mealclan.onrender.com, connect to wss on same domain
+    if (port) {
+      return `wss://${hostname}:${port}`;
+    }
+    return `wss://${hostname}`;
+  }
+
+  // For development (HTTP)
+  if (port) {
+    return `http://${hostname}:${port}`;
+  }
+  return `http://${hostname}:3001`;
+}
+
 export function initializeSocket(): Socket {
-  if (socket) {
+  if (socket && socket.connected) {
     return socket;
   }
 
-  const socketUrl = typeof window !== 'undefined' 
-    ? (process.env.NEXT_PUBLIC_SOCKET_URL || 'https://mealclan.online')
-    : 'https://www.mealclan.online';
-  
+  const socketUrl = getSocketUrl();
+  console.log('[Socket] Initializing connection to:', socketUrl);
+
   socket = io(socketUrl, {
     reconnection: true,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
-    reconnectionAttempts: 5,
+    reconnectionAttempts: 10,
     transports: ['websocket', 'polling'],
+    secure: true,
+    rejectUnauthorized: false,
   });
 
   socket.on('connect', () => {
-    console.log('[Socket] Connected to server');
+    console.log('[Socket] Connected to server successfully');
   });
 
-  socket.on('disconnect', () => {
-    console.log('[Socket] Disconnected from server');
+  socket.on('connect_error', (error: any) => {
+    console.error('[Socket] Connection error:', error.message || error);
   });
 
-  socket.on('error', (error) => {
-    console.error('[Socket] Error:', error);
+  socket.on('disconnect', (reason: string) => {
+    console.log('[Socket] Disconnected from server. Reason:', reason);
+  });
+
+  socket.on('error', (error: any) => {
+    console.error('[Socket] Socket error:', error);
   });
 
   return socket;
@@ -81,25 +115,62 @@ export function onMenuUpdate(
 // Emit events
 export function emitOrderStatusChange(orderId: string, status: string): void {
   const s = socket || initializeSocket();
-  s.emit('updateOrderStatus', { orderId, status });
+  if (s.connected) {
+    s.emit('updateOrderStatus', { orderId, status });
+  } else {
+    console.warn('[Socket] Cannot emit: socket not connected');
+    // Queue the emit to retry when connected
+    s.once('connect', () => {
+      s.emit('updateOrderStatus', { orderId, status });
+    });
+  }
 }
 
 export function joinAdminRoom(): void {
   const s = socket || initializeSocket();
-  s.emit('joinAdminRoom');
+  
+  const join = () => {
+    if (s.connected) {
+      console.log('[Socket] Joining admin room');
+      s.emit('joinAdmin');
+    } else {
+      console.warn('[Socket] Cannot join room: socket not connected, retrying...');
+      // Retry after a short delay
+      setTimeout(join, 1000);
+    }
+  };
+
+  join();
 }
 
 export function leaveAdminRoom(): void {
   const s = socket || initializeSocket();
-  s.emit('leaveAdminRoom');
+  if (s.connected) {
+    console.log('[Socket] Leaving admin room');
+    s.emit('leaveAdmin');
+  }
 }
 
 export function joinCustomerRoom(orderId: string): void {
   const s = socket || initializeSocket();
-  s.emit('joinCustomerRoom', { orderId });
+  
+  const join = () => {
+    if (s.connected) {
+      console.log('[Socket] Joining customer room for order:', orderId);
+      s.emit('joinCustomerRoom', { orderId });
+    } else {
+      console.warn('[Socket] Cannot join customer room: socket not connected, retrying...');
+      setTimeout(() => join(), 1000);
+    }
+  };
+
+  join();
 }
 
 export function leaveCustomerRoom(orderId: string): void {
   const s = socket || initializeSocket();
-  s.emit('leaveCustomerRoom', { orderId });
+  if (s.connected) {
+    console.log('[Socket] Leaving customer room for order:', orderId);
+    s.emit('leaveCustomerRoom', { orderId });
+  }
 }

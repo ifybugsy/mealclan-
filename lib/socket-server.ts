@@ -136,3 +136,54 @@ export function broadcastMenuUpdate(
     timestamp: new Date().toISOString(),
   });
 }
+
+export function broadcastMenuItemAdded(
+  io: SocketIOServer,
+  item: Record<string, any>
+) {
+  // Broadcast to both admin and customer namespaces
+  io.of('/admin').emit('menuItemAdded', {
+    item,
+    timestamp: new Date().toISOString(),
+  });
+  io.emit('menuItemAdded', {
+    item,
+    timestamp: new Date().toISOString(),
+  });
+  console.log('[Socket] Menu item added broadcast:', item._id);
+}
+
+export function broadcastMenuItemUpdated(
+  io: SocketIOServer,
+  itemId: string,
+  item: Record<string, any>
+) {
+  // Broadcast to both admin and customer namespaces
+  io.of('/admin').emit('menuItemUpdated', {
+    itemId,
+    item,
+    timestamp: new Date().toISOString(),
+  });
+  io.emit('menuItemUpdated', {
+    itemId,
+    item,
+    timestamp: new Date().toISOString(),
+  });
+  console.log('[Socket] Menu item updated broadcast:', itemId);
+}
+
+export function broadcastMenuItemDeleted(
+  io: SocketIOServer,
+  itemId: string
+) {
+  // Broadcast to both admin and customer namespaces
+  io.of('/admin').emit('menuItemDeleted', {
+    itemId,
+    timestamp: new Date().toISOString(),
+  });
+  io.emit('menuItemDeleted', {
+    itemId,
+    timestamp: new Date().toISOString(),
+  });
+  console.log('[Socket] Menu item deleted broadcast:', itemId);
+}

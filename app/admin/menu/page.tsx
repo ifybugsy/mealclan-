@@ -24,6 +24,8 @@ export default function MenuManagement() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [fileName, setFileName] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -59,8 +61,10 @@ export default function MenuManagement() {
 
     try {
       const socket = initializeSocket();
+      console.log('[MenuManagement] Socket connected:', socket.connected);
       
       if (editingId) {
+        console.log('[MenuManagement] Updating item:', editingId);
         const response = await fetch(`/api/menu/${editingId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -68,10 +72,17 @@ export default function MenuManagement() {
         });
         const updatedItem = await response.json();
         
-        // Emit socket event for real-time update with full item data
-        socket.emit('menuUpdate', { itemId: editingId, changes: updatedItem });
-        console.log('[v0] Emitted menuUpdate event for item:', editingId, updatedItem);
+        // Emit socket event for real-time update to all clients
+        if (socket.connected) {
+          socket.emit('menuItemUpdated', { 
+            itemId: editingId, 
+            item: updatedItem,
+            timestamp: new Date().toISOString()
+          });
+          console.log('[MenuManagement] Emitted menuItemUpdated:', updatedItem);
+        }
       } else {
+        console.log('[MenuManagement] Creating new item');
         const response = await fetch('/api/menu', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -79,18 +90,25 @@ export default function MenuManagement() {
         });
         const newItem = await response.json();
         
-        // Emit socket event for real-time add with full item data
-        socket.emit('menuAdd', newItem);
-        console.log('[v0] Emitted menuAdd event for new item:', newItem);
+        // Emit socket event for real-time add to all clients
+        if (socket.connected) {
+          socket.emit('menuItemAdded', { 
+            item: newItem,
+            timestamp: new Date().toISOString()
+          });
+          console.log('[MenuManagement] Emitted menuItemAdded:', newItem);
+        }
       }
 
       setFormData({ name: '', description: '', price: '', category: 'Main Course', image: '', available: true });
       setFileName('');
       setEditingId(null);
       setShowForm(false);
+      setUploadError(null);
       fetchItems();
     } catch (error) {
-      console.error('Failed to save menu item:', error);
+      console.error('[MenuManagement] Failed to save menu item:', error);
+      setUploadError(error instanceof Error ? error.message : 'Failed to save item');
     }
   };
 
@@ -99,16 +117,23 @@ export default function MenuManagement() {
 
     try {
       const socket = initializeSocket();
+      console.log('[MenuManagement] Deleting item:', id);
       
       await fetch(`/api/menu/${id}`, { method: 'DELETE' });
       
-      // Emit socket event for real-time delete
-      socket.emit('menuDelete', { itemId: id });
-      console.log('[v0] Emitted menuDelete event for item:', id);
+      // Emit socket event for real-time delete to all clients
+      if (socket.connected) {
+        socket.emit('menuItemDeleted', { 
+          itemId: id,
+          timestamp: new Date().toISOString()
+        });
+        console.log('[MenuManagement] Emitted menuItemDeleted:', id);
+      }
       
       fetchItems();
     } catch (error) {
-      console.error('Failed to delete menu item:', error);
+      console.error('[MenuManagement] Failed to delete menu item:', error);
+      setUploadError(error instanceof Error ? error.message : 'Failed to delete item');
     }
   };
 
@@ -130,19 +155,34 @@ export default function MenuManagement() {
     if (!file) return;
 
     setFileName(file.name);
+    setUploading(true);
+    setUploadError(null);
 
     const formDataObj = new FormData();
     formDataObj.append('file', file);
 
     try {
+      console.log('[MenuManagement] Uploading file:', file.name, 'Size:', file.size, 'Type:', file.type);
       const response = await fetch('/api/upload', {
         method: 'POST',
         body: formDataObj,
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
       const data = await response.json();
+      console.log('[MenuManagement] Upload successful:', data.url);
       setFormData({ ...formData, image: data.url });
     } catch (error) {
-      console.error('Upload failed:', error);
+      console.error('[MenuManagement] Upload failed:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Upload failed';
+      setUploadError(errorMsg);
+      setFileName('');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -163,6 +203,11 @@ export default function MenuManagement() {
         <Card>
           <CardHeader>
             <CardTitle>{editingId ? 'Edit Item' : 'Add New Menu Item'}</CardTitle>
+            {uploadError && (
+              <div className="mt-2 p-3 bg-red-100 border border-red-300 rounded-md text-red-700 text-sm">
+                {uploadError}
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -200,26 +245,38 @@ export default function MenuManagement() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Image</label>
+                  <label className="text-sm font-medium">Image or Video</label>
                   <div className="flex gap-2 items-center">
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*,video/*"
                       onChange={handleImageUpload}
-                      className="w-full"
+                      disabled={uploading}
+                      className="w-full disabled:opacity-50"
                     />
-                    {fileName && (
+                    {uploading && (
+                      <span className="text-sm text-blue-600 whitespace-nowrap animate-pulse">Uploading...</span>
+                    )}
+                    {fileName && !uploading && (
                       <span className="text-sm text-green-600 whitespace-nowrap">✓ {fileName}</span>
                     )}
                   </div>
                   {formData.image && (
-                    <div className="mt-2 relative h-24 w-24">
-                      <Image
-                        src={formData.image}
-                        alt="Preview"
-                        fill
-                        className="object-cover rounded-md"
-                      />
+                    <div className="mt-2">
+                      {formData.image.includes('/image/') ? (
+                        <div className="relative h-24 w-24">
+                          <Image
+                            src={formData.image}
+                            alt="Preview"
+                            fill
+                            className="object-cover rounded-md"
+                          />
+                        </div>
+                      ) : (
+                        <div className="relative h-24 w-24 bg-gray-200 rounded-md flex items-center justify-center">
+                          <span className="text-xs text-gray-600">Video uploaded</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

@@ -12,24 +12,36 @@ export function useSocket() {
     setSocket(s);
 
     const handleConnect = () => {
-      console.log('[useSocket] Connected');
+      console.log('[useSocket] Connected to Socket.IO server');
       setIsConnected(true);
     };
 
-    const handleDisconnect = () => {
-      console.log('[useSocket] Disconnected');
+    const handleConnectError = (error: any) => {
+      console.error('[useSocket] Connection error:', error);
       setIsConnected(false);
     };
 
+    const handleDisconnect = (reason: string) => {
+      console.log('[useSocket] Disconnected. Reason:', reason);
+      setIsConnected(false);
+    };
+
+    // Add listeners
     s.on('connect', handleConnect);
+    s.on('connect_error', handleConnectError);
     s.on('disconnect', handleDisconnect);
 
+    // Set initial state
     if (s.connected) {
+      console.log('[useSocket] Socket already connected');
       setIsConnected(true);
+    } else {
+      console.log('[useSocket] Socket not yet connected, waiting...');
     }
 
     return () => {
       s.off('connect', handleConnect);
+      s.off('connect_error', handleConnectError);
       s.off('disconnect', handleDisconnect);
     };
   }, []);
@@ -46,29 +58,42 @@ export function useRealTimeOrders(
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isConnected || !socket) return;
+    if (!socket) {
+      console.log('[useRealTimeOrders] Socket not initialized yet');
+      return;
+    }
 
     // Fetch initial orders
     const fetchOrders = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://mealclan.online';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+        console.log('[useRealTimeOrders] Fetching orders from:', apiUrl);
         const response = await fetch(`${apiUrl}/orders`);
         const data = await response.json();
         const orderList = Array.isArray(data) ? data : [];
+        console.log('[useRealTimeOrders] Fetched orders:', orderList.length);
         setOrders(orderList);
         onUpdate?.(orderList);
       } catch (error) {
-        console.error('Failed to fetch orders:', error);
+        console.error('[useRealTimeOrders] Failed to fetch orders:', error);
         setOrders([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchOrders();
+    // Only fetch if socket is connected
+    if (isConnected) {
+      console.log('[useRealTimeOrders] Socket connected, fetching orders');
+      fetchOrders();
+    } else {
+      console.log('[useRealTimeOrders] Socket not connected, waiting for connection');
+      setLoading(false);
+    }
 
     // Listen for real-time updates
     const handleOrderUpdate = (data: any) => {
+      console.log('[useRealTimeOrders] Order status update:', data);
       const orderId = data.orderId || data._id;
       const status = data.status;
       setOrders((prev) =>
@@ -80,7 +105,7 @@ export function useRealTimeOrders(
     };
 
     const handleNewOrder = (data: any) => {
-      console.log('[v0] New order received:', data);
+      console.log('[useRealTimeOrders] New order received:', data);
       setOrders((prev) => [data, ...prev]);
       onUpdate?.([data, ...orders]);
     };
@@ -94,7 +119,7 @@ export function useRealTimeOrders(
       socket.off('order:status-updated', handleOrderUpdate);
       socket.off('newOrder', handleNewOrder);
     };
-  }, [isConnected, socket, onUpdate, onStatusChange, orders]);
+  }, [socket, isConnected, onUpdate, onStatusChange, orders]);
 
   return { orders, loading, isConnected };
 }
@@ -112,7 +137,7 @@ export function useRealTimeDashboardStats(
     // Fetch initial stats
     const fetchStats = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://mealclan.online';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
         const response = await fetch(`${apiUrl}/orders`);
         const data = await response.json();
         const orders = Array.isArray(data) ? data : [];

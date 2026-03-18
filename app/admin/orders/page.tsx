@@ -39,11 +39,17 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    joinAdminRoom();
+    console.log('[OrdersPage] Socket connected status:', isConnected);
+    if (isConnected) {
+      console.log('[OrdersPage] Joining admin room');
+      joinAdminRoom();
+    }
+
     return () => {
+      console.log('[OrdersPage] Leaving admin room');
       leaveAdminRoom();
     };
-  }, []);
+  }, [isConnected]);
 
   useEffect(() => {
     // Filter orders based on selected status

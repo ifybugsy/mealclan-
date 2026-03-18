@@ -18,11 +18,17 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<OrderStats>(realTimeStats);
 
   useEffect(() => {
-    joinAdminRoom();
+    console.log('[AdminDashboard] Socket connected status:', isConnected);
+    if (isConnected) {
+      console.log('[AdminDashboard] Joining admin room');
+      joinAdminRoom();
+    }
+
     return () => {
+      console.log('[AdminDashboard] Leaving admin room');
       leaveAdminRoom();
     };
-  }, []);
+  }, [isConnected]);
 
   useEffect(() => {
     setStats(realTimeStats);
