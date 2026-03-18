@@ -36,6 +36,7 @@ export function MenuStore({ onAddToCart }: MenuStoreProps) {
     // Initialize socket and listen for menu updates
     const socket = initializeSocket();
 
+    // Legacy event handlers
     const handleMenuUpdate = (data: { itemId: string; changes: Record<string, any> }) => {
       console.log('[v0] Menu update received:', data);
       setItems((prev) =>
@@ -55,14 +56,40 @@ export function MenuStore({ onAddToCart }: MenuStoreProps) {
       setItems((prev) => [data, ...prev]);
     };
 
+    // Real-time event handlers
+    const handleMenuItemAdded = (data: { item: MenuItem; timestamp: string }) => {
+      console.log('[MenuStore] Real-time item added:', data.item._id);
+      setItems((prev) => [data.item, ...prev]);
+    };
+
+    const handleMenuItemUpdated = (data: { itemId: string; item: MenuItem; timestamp: string }) => {
+      console.log('[MenuStore] Real-time item updated:', data.itemId);
+      setItems((prev) =>
+        prev.map((item) =>
+          item._id === data.itemId ? data.item : item
+        )
+      );
+    };
+
+    const handleMenuItemDeleted = (data: { itemId: string; timestamp: string }) => {
+      console.log('[MenuStore] Real-time item deleted:', data.itemId);
+      setItems((prev) => prev.filter((item) => item._id !== data.itemId));
+    };
+
     socket.on('menuUpdate', handleMenuUpdate);
     socket.on('menuDelete', handleMenuDelete);
     socket.on('menuAdd', handleMenuAdd);
+    socket.on('menuItemAdded', handleMenuItemAdded);
+    socket.on('menuItemUpdated', handleMenuItemUpdated);
+    socket.on('menuItemDeleted', handleMenuItemDeleted);
 
     return () => {
       socket.off('menuUpdate', handleMenuUpdate);
       socket.off('menuDelete', handleMenuDelete);
       socket.off('menuAdd', handleMenuAdd);
+      socket.off('menuItemAdded', handleMenuItemAdded);
+      socket.off('menuItemUpdated', handleMenuItemUpdated);
+      socket.off('menuItemDeleted', handleMenuItemDeleted);
     };
   }, []);
 
