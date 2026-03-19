@@ -117,7 +117,7 @@ export default function ContactPage() {
                     type="email"
                     value={formData.email}
                     onChange={handleChange}
-                    placeholder="your.email@example.com"
+                    placeholder="your.email here"
                     required
                     className="text-sm md:text-base"
                   />
@@ -133,7 +133,7 @@ export default function ContactPage() {
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  placeholder="+1 (555) 000-0000"
+                  placeholder="+234 (080) 000-0000"
                   className="text-sm md:text-base"
                 />
               </div>
@@ -184,7 +184,7 @@ export default function ContactPage() {
                   <MapPin className="w-6 h-6 text-orange-500 flex-shrink-0" />
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-1">Location</h3>
-                    <p className="text-gray-600">123 Food Street, Lagos, Nigeria</p>
+                    <p className="text-gray-600">81 Eneka Road Rukpokwu Port Harcourt Rivers State </p>
                   </div>
                 </CardContent>
               </Card>
@@ -194,7 +194,7 @@ export default function ContactPage() {
                   <Phone className="w-6 h-6 text-orange-500 flex-shrink-0" />
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-1">Phone</h3>
-                    <p className="text-gray-600">+234 (800) 123-4567</p>
+                    <p className="text-gray-600">+234 08038753508, 0706 537 88267</p>
                   </div>
                 </CardContent>
               </Card>
@@ -204,7 +204,7 @@ export default function ContactPage() {
                   <Mail className="w-6 h-6 text-orange-500 flex-shrink-0" />
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-1">Email</h3>
-                    <p className="text-gray-600">hello@mealclan.com</p>
+                    <p className="text-gray-600">f08038753508@gmail.com</p>
                   </div>
                 </CardContent>
               </Card>
@@ -228,9 +228,8 @@ export default function ContactPage() {
               <div className="bg-orange-50 p-6 rounded-lg">
                 <h3 className="font-semibold text-gray-900 mb-2">Business Hours</h3>
                 <ul className="text-gray-600 space-y-1 text-sm">
-                  <li>Monday - Friday: 9:00 AM - 10:00 PM</li>
-                  <li>Saturday: 10:00 AM - 11:00 PM</li>
-                  <li>Sunday: 11:00 AM - 9:00 PM</li>
+                  <li>Monday - Friday: 8:00 AM - 10:00 PM</li>
+                  <li>Saturday: 8:00 AM - 11:00 PM</li>
                 </ul>
               </div>
             </div>
