@@ -51,7 +51,7 @@ export default function AboutPage() {
             </div>
             <div className="order-1 md:order-2 relative h-56 sm:h-64 md:h-80 bg-gray-200 rounded-lg overflow-hidden shadow-lg">
               <Image
-                src="/restaurant-storefront.jpg"
+                src="/mealclan.jpg"
                 alt="MealClan Restaurant Storefront"
                 fill
                 className="object-cover hover:scale-105 transition-transform duration-300"

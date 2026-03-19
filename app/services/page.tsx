@@ -240,7 +240,7 @@ export default function ServicesPage() {
               </Button>
             </Link>
             <Link href="/store" className="w-full sm:w-auto">
-              <Button size="lg" variant="outline" className="w-full border-white text-white hover:bg-orange text-sm sm:text-base">
+              <Button size="lg" variant="outline" className="w-full border-white text-orange hover:bg-orange text-sm sm:text-base">
                 Order Meals Now
               </Button>
             </Link>
