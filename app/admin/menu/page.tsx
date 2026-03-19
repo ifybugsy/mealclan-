@@ -48,11 +48,12 @@ export default function MenuManagement() {
 
   const fetchItems = async () => {
     try {
-      const response = await fetch('/api/menu');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      const response = await fetch(`${apiUrl}/menu`);
       const data = await response.json();
       setItems(data);
     } catch (error) {
-      console.error('Failed to fetch menu items:', error);
+      console.error('[v0] Failed to fetch menu items:', error);
     } finally {
       setLoading(false);
     }
@@ -76,14 +77,16 @@ export default function MenuManagement() {
 
     try {
       const socket = initializeSocket();
-      console.log('[MenuManagement] Socket connected:', socket.connected);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      console.log('[v0] Socket connected:', socket.connected);
       
       if (editingId) {
-        console.log('[MenuManagement] Updating item:', editingId);
-        const response = await fetch(`/api/menu/${editingId}`, {
+        console.log('[v0] Updating item:', editingId);
+        const response = await fetch(`${apiUrl}/menu/${editingId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
+          credentials: 'include'
         });
 
         if (!response.ok) {
@@ -100,14 +103,15 @@ export default function MenuManagement() {
             item: updatedItem,
             timestamp: new Date().toISOString()
           });
-          console.log('[MenuManagement] Emitted menuItemUpdated:', updatedItem);
+          console.log('[v0] Emitted menuItemUpdated:', updatedItem);
         }
       } else {
-        console.log('[MenuManagement] Creating new item');
-        const response = await fetch('/api/menu', {
+        console.log('[v0] Creating new item');
+        const response = await fetch(`${apiUrl}/menu`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
+          credentials: 'include'
         });
 
         if (!response.ok) {
@@ -116,7 +120,7 @@ export default function MenuManagement() {
         }
 
         const newItem = await response.json();
-        console.log('[MenuManagement] Item created:', newItem);
+        console.log('[v0] Item created:', newItem);
         
         // Emit socket event for real-time add to all clients
         if (socket.connected) {
@@ -124,7 +128,7 @@ export default function MenuManagement() {
             item: newItem,
             timestamp: new Date().toISOString()
           });
-          console.log('[MenuManagement] Emitted menuItemAdded:', newItem);
+          console.log('[v0] Emitted menuItemAdded:', newItem);
         }
       }
 
@@ -152,12 +156,14 @@ export default function MenuManagement() {
     console.log('[v0] Starting delete process for item:', id);
     try {
       const socket = initializeSocket();
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
       console.log('[v0] Socket status:', socket.connected);
-      console.log('[v0] Deleting item with ID:', id);
+      console.log('[v0] Deleting item with ID:', id, 'API URL:', apiUrl);
       
-      const response = await fetch(`/api/menu/${id}`, { 
+      const response = await fetch(`${apiUrl}/menu/${id}`, { 
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
       });
       
       console.log('[v0] Delete API response status:', response.status);
@@ -215,13 +221,15 @@ export default function MenuManagement() {
     setFinishingId(id);
     try {
       const socket = initializeSocket();
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
       const newStatus = !currentStatus;
-      console.log('[MenuManagement] Toggling finished status for item:', id, 'New status:', newStatus);
+      console.log('[v0] Toggling finished status for item:', id, 'New status:', newStatus);
       
-      const response = await fetch(`/api/menu/${id}`, {
+      const response = await fetch(`${apiUrl}/menu/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ finished: newStatus }),
+        credentials: 'include'
       });
 
       if (!response.ok) {

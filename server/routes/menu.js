@@ -49,6 +49,7 @@ router.post('/', authenticate, async (req, res) => {
   try {
     const { name, description, price, category, image, available } = req.body;
 
+    // Validation
     if (!name || !price || !category) {
       return res.status(400).json({ error: 'Name, price, and category are required' });
     }
@@ -74,9 +75,11 @@ router.post('/', authenticate, async (req, res) => {
     const result = await items.insertOne(newItem);
     const createdItem = { ...newItem, _id: result.insertedId };
 
+    // Emit real-time socket event
     const io = req.app.locals.io;
     if (io) {
       io.emit('menuAdd', createdItem);
+      console.log('[v0] Emitted menuAdd event for new item:', createdItem._id);
     }
 
     res.status(201).json(createdItem);
@@ -94,6 +97,7 @@ router.patch('/:id', authenticate, async (req, res) => {
 
     const { name, description, price, category, image, available } = req.body;
 
+    // Validation
     if (price !== undefined && (typeof price !== 'number' || price < 0)) {
       return res.status(400).json({ error: 'Price must be a positive number' });
     }
@@ -120,10 +124,12 @@ router.patch('/:id', authenticate, async (req, res) => {
     }
 
     const updatedItem = await items.findOne({ _id: new ObjectId(req.params.id) });
-
+    
+    // Emit real-time socket event
     const io = req.app.locals.io;
     if (io) {
       io.emit('menuUpdate', { itemId: req.params.id, changes: updateData });
+      console.log('[v0] Emitted menuUpdate event (PATCH) for item:', req.params.id);
     }
 
     res.json(updatedItem);
@@ -141,6 +147,7 @@ router.put('/:id', authenticate, async (req, res) => {
 
     const { name, description, price, category, image, available } = req.body;
 
+    // Validation
     if (price !== undefined && (typeof price !== 'number' || price < 0)) {
       return res.status(400).json({ error: 'Price must be a positive number' });
     }
@@ -167,10 +174,12 @@ router.put('/:id', authenticate, async (req, res) => {
     }
 
     const updatedItem = await items.findOne({ _id: new ObjectId(req.params.id) });
-
+    
+    // Emit real-time socket event
     const io = req.app.locals.io;
     if (io) {
       io.emit('menuUpdate', { itemId: req.params.id, changes: updateData });
+      console.log('[v0] Emitted menuUpdate event for item:', req.params.id);
     }
 
     res.json(updatedItem);
@@ -179,30 +188,30 @@ router.put('/:id', authenticate, async (req, res) => {
   }
 });
 
-// ✅ FIXED DELETE ROUTE
+// Delete menu item (admin only)
 router.delete('/:id', authenticate, async (req, res) => {
   try {
-    const id = req.params.id.trim();
-
-    if (!ObjectId.isValid(id)) {
-      return res.status(400).json({ error: 'Invalid menu item ID format' });
+    if (!ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ error: 'Invalid menu item ID' });
     }
 
     const db = await getDatabase();
     const items = db.collection('menu_items');
 
-    const result = await items.deleteOne({ _id: new ObjectId(id) });
+    const result = await items.deleteOne({ _id: new ObjectId(req.params.id) });
 
     if (result.deletedCount === 0) {
       return res.status(404).json({ error: 'Menu item not found' });
     }
 
+    // Emit real-time socket event
     const io = req.app.locals.io;
     if (io) {
-      io.emit('menuDelete', { itemId: id });
+      io.emit('menuDelete', { itemId: req.params.id });
+      console.log('[v0] Emitted menuDelete event for item:', req.params.id);
     }
 
-    res.json({ success: true });
+    res.json({ success: true, message: 'Menu item deleted' });
   } catch (error) {
     handleError(error, req, res);
   }
