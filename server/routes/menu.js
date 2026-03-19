@@ -44,8 +44,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Create menu item (admin only)
-router.post('/', authenticate, async (req, res) => {
+// Create menu item
+router.post('/', async (req, res) => {
   try {
     const { name, description, price, category, image, available } = req.body;
 
@@ -88,14 +88,14 @@ router.post('/', authenticate, async (req, res) => {
   }
 });
 
-// Update menu item (admin only)
-router.patch('/:id', authenticate, async (req, res) => {
+// Update menu item
+router.patch('/:id', async (req, res) => {
   try {
     if (!ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ error: 'Invalid menu item ID' });
     }
 
-    const { name, description, price, category, image, available } = req.body;
+    const { name, description, price, category, image, available, finished } = req.body;
 
     // Validation
     if (price !== undefined && (typeof price !== 'number' || price < 0)) {
@@ -112,6 +112,7 @@ router.patch('/:id', authenticate, async (req, res) => {
     if (category !== undefined) updateData.category = category;
     if (image !== undefined) updateData.image = image;
     if (available !== undefined) updateData.available = available;
+    if (finished !== undefined) updateData.finished = finished;
     updateData.updatedAt = new Date();
 
     const result = await items.updateOne(
@@ -129,7 +130,7 @@ router.patch('/:id', authenticate, async (req, res) => {
     const io = req.app.locals.io;
     if (io) {
       io.emit('menuUpdate', { itemId: req.params.id, changes: updateData });
-      console.log('[v0] Emitted menuUpdate event (PATCH) for item:', req.params.id);
+      console.log('[v0] Emitted menuUpdate event (PATCH) for item:', req.params.id, 'Changes:', Object.keys(updateData));
     }
 
     res.json(updatedItem);
@@ -138,8 +139,8 @@ router.patch('/:id', authenticate, async (req, res) => {
   }
 });
 
-// Update menu item (admin only)
-router.put('/:id', authenticate, async (req, res) => {
+// Update menu item
+router.put('/:id', async (req, res) => {
   try {
     if (!ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ error: 'Invalid menu item ID' });
@@ -188,19 +189,28 @@ router.put('/:id', authenticate, async (req, res) => {
   }
 });
 
-// Delete menu item (admin only)
-router.delete('/:id', authenticate, async (req, res) => {
+// Delete menu item
+router.delete('/:id', async (req, res) => {
   try {
     if (!ObjectId.isValid(req.params.id)) {
+      console.log('[v0] Invalid ObjectId format for delete:', req.params.id);
       return res.status(400).json({ error: 'Invalid menu item ID' });
     }
 
     const db = await getDatabase();
     const items = db.collection('menu_items');
 
+    // Get the item before deleting so we can return it
+    const itemToDelete = await items.findOne({ _id: new ObjectId(req.params.id) });
+    if (!itemToDelete) {
+      console.log('[v0] Menu item not found for deletion:', req.params.id);
+      return res.status(404).json({ error: 'Menu item not found' });
+    }
+
     const result = await items.deleteOne({ _id: new ObjectId(req.params.id) });
 
     if (result.deletedCount === 0) {
+      console.log('[v0] Failed to delete menu item:', req.params.id);
       return res.status(404).json({ error: 'Menu item not found' });
     }
 
@@ -208,11 +218,13 @@ router.delete('/:id', authenticate, async (req, res) => {
     const io = req.app.locals.io;
     if (io) {
       io.emit('menuDelete', { itemId: req.params.id });
-      console.log('[v0] Emitted menuDelete event for item:', req.params.id);
+      io.emit('menuItemDeleted', { itemId: req.params.id, timestamp: new Date().toISOString() });
+      console.log('[v0] Emitted menuDelete and menuItemDeleted events for item:', req.params.id, 'Name:', itemToDelete.name);
     }
 
-    res.json({ success: true, message: 'Menu item deleted' });
+    res.json({ success: true, message: 'Menu item deleted', item: itemToDelete });
   } catch (error) {
+    console.error('[v0] Error deleting menu item:', error.message);
     handleError(error, req, res);
   }
 });
