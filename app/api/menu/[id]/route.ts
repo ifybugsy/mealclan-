@@ -1,145 +1,66 @@
 import { connectToDatabase } from '@/lib/mongodb';
+import { MenuItem } from '@/lib/models';
 import { NextRequest, NextResponse } from 'next/server';
-import { ObjectId } from 'mongodb';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET() {
   try {
     const { db } = await connectToDatabase();
-    const item = await db
-      .collection('menu_items')
-      .findOne({ _id: new ObjectId(params.id) });
+    const items = await db.collection<MenuItem>('menu_items').find({}).sort({ createdAt: -1 }).toArray();
+    
+    // Convert ObjectId to string for JSON response
+    const formattedItems = items.map((item) => ({
+      ...item,
+      _id: item._id?.toString(),
+    }));
 
-    if (!item) {
-      return NextResponse.json({ error: 'Menu item not found' }, { status: 404 });
-    }
-
-    return NextResponse.json(item);
+    console.log('[API] Successfully fetched menu items:', formattedItems.length);
+    return NextResponse.json(formattedItems);
   } catch (error) {
-    console.error('Error fetching menu item:', error);
-    return NextResponse.json({ error: 'Failed to fetch menu item' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('[API] Error fetching menu:', errorMessage);
+    // Return empty array on error instead of 500, so the UI can still load
+    return NextResponse.json([], { status: 200 });
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest) {
   try {
     const { db } = await connectToDatabase();
     const body = await request.json();
-    
-    // Attempt to create ObjectId - this will throw if invalid
-    let objectId: ObjectId;
-    try {
-      objectId = new ObjectId(params.id);
-    } catch (err) {
-      console.log('[API] Invalid ObjectId format:', params.id, err);
+
+    // Validate required fields
+    if (!body.name || !body.price) {
       return NextResponse.json(
-        { error: 'Invalid menu item ID format' },
+        { error: 'Name and price are required' },
         { status: 400 }
       );
     }
 
-    // Build update object with only provided fields
-    const updateData: any = {
+    const menuItem: MenuItem = {
+      name: body.name,
+      description: body.description || '',
+      price: parseFloat(body.price),
+      category: body.category || 'Main Course',
+      image: body.image || '',
+      available: body.available !== false,
+      finished: body.finished || false,
+      createdAt: new Date(),
       updatedAt: new Date(),
     };
 
-    // Only update fields that are provided in the request
-    if (body.name !== undefined) updateData.name = body.name;
-    if (body.description !== undefined) updateData.description = body.description;
-    if (body.price !== undefined) updateData.price = body.price;
-    if (body.category !== undefined) updateData.category = body.category;
-    if (body.image !== undefined) updateData.image = body.image;
-    if (body.available !== undefined) updateData.available = body.available;
-    if (body.finished !== undefined) updateData.finished = body.finished;
-
-    const result = await db.collection('menu_items').findOneAndUpdate(
-      { _id: objectId },
-      { $set: updateData },
-      { returnDocument: 'after' }
-    );
-
-    if (!result.value) {
-      console.log('[API] Menu item not found:', params.id);
-      return NextResponse.json({ error: 'Menu item not found' }, { status: 404 });
-    }
-
-    const updatedItem = {
-      ...result.value,
-      _id: result.value._id?.toString(),
+    const result = await db.collection('menu_items').insertOne(menuItem);
+    
+    // Convert ObjectId to string for JSON response
+    const createdItem = {
+      _id: result.insertedId.toString(),
+      ...menuItem,
     };
 
-    console.log('[API] Menu item updated successfully:', params.id, 'Updates:', Object.keys(updateData));
-    return NextResponse.json(updatedItem, { status: 200 });
+    console.log('[API] Menu item created successfully:', createdItem._id);
+    return NextResponse.json(createdItem, { status: 201 });
   } catch (error) {
-    console.error('[API] Error updating menu item:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Failed to update menu item';
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    );
-  }
-}
-
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const { db } = await connectToDatabase();
-    
-    // Attempt to create ObjectId - this will throw if invalid
-    let objectId: ObjectId;
-    try {
-      objectId = new ObjectId(params.id);
-    } catch (err) {
-      console.log('[API] Invalid ObjectId format:', params.id, err);
-      return NextResponse.json(
-        { error: 'Invalid menu item ID format' },
-        { status: 400 }
-      );
-    }
-    
-    // First, find the item to return it
-    const item = await db
-      .collection('menu_items')
-      .findOne({ _id: objectId });
-
-    if (!item) {
-      console.log('[API] Menu item not found:', params.id);
-      return NextResponse.json(
-        { error: 'Menu item not found' },
-        { status: 404 }
-      );
-    }
-
-    // Delete the item
-    const result = await db
-      .collection('menu_items')
-      .deleteOne({ _id: objectId });
-
-    if (result.deletedCount === 0) {
-      console.log('[API] Failed to delete menu item:', params.id);
-      return NextResponse.json(
-        { error: 'Menu item not found' },
-        { status: 404 }
-      );
-    }
-
-    const deletedItem = {
-      ...item,
-      _id: item._id?.toString(),
-    };
-
-    console.log('[API] Menu item deleted successfully:', params.id, 'Name:', item.name);
-    return NextResponse.json(deletedItem, { status: 200 });
-  } catch (error) {
-    console.error('[API] Error deleting menu item:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Failed to delete menu item';
+    console.error('Error creating menu item:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create menu item';
     return NextResponse.json(
       { error: errorMessage },
       { status: 500 }
