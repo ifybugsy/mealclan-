@@ -28,16 +28,20 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    if (!ObjectId.isValid(params.id)) {
-      console.log('[API] Invalid ObjectId format:', params.id);
+    const { db } = await connectToDatabase();
+    const body = await request.json();
+    
+    // Attempt to create ObjectId - this will throw if invalid
+    let objectId: ObjectId;
+    try {
+      objectId = new ObjectId(params.id);
+    } catch (err) {
+      console.log('[API] Invalid ObjectId format:', params.id, err);
       return NextResponse.json(
         { error: 'Invalid menu item ID format' },
         { status: 400 }
       );
     }
-
-    const { db } = await connectToDatabase();
-    const body = await request.json();
 
     // Build update object with only provided fields
     const updateData: any = {
@@ -54,7 +58,7 @@ export async function PATCH(
     if (body.finished !== undefined) updateData.finished = body.finished;
 
     const result = await db.collection('menu_items').findOneAndUpdate(
-      { _id: new ObjectId(params.id) },
+      { _id: objectId },
       { $set: updateData },
       { returnDocument: 'after' }
     );
@@ -86,21 +90,24 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Validate ObjectId format
-    if (!ObjectId.isValid(params.id)) {
-      console.log('[API] Invalid ObjectId format:', params.id);
+    const { db } = await connectToDatabase();
+    
+    // Attempt to create ObjectId - this will throw if invalid
+    let objectId: ObjectId;
+    try {
+      objectId = new ObjectId(params.id);
+    } catch (err) {
+      console.log('[API] Invalid ObjectId format:', params.id, err);
       return NextResponse.json(
         { error: 'Invalid menu item ID format' },
         { status: 400 }
       );
     }
-
-    const { db } = await connectToDatabase();
     
     // First, find the item to return it
     const item = await db
       .collection('menu_items')
-      .findOne({ _id: new ObjectId(params.id) });
+      .findOne({ _id: objectId });
 
     if (!item) {
       console.log('[API] Menu item not found:', params.id);
@@ -113,7 +120,7 @@ export async function DELETE(
     // Delete the item
     const result = await db
       .collection('menu_items')
-      .deleteOne({ _id: new ObjectId(params.id) });
+      .deleteOne({ _id: objectId });
 
     if (result.deletedCount === 0) {
       console.log('[API] Failed to delete menu item:', params.id);
