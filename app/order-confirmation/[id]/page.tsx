@@ -40,18 +40,16 @@ export default function OrderConfirmationPage() {
     const fetchData = async () => {
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-        const [orderRes, settingsRes] = await Promise.all([
-          fetch(`${apiUrl}/orders/${orderId}`),
-          fetch(`${apiUrl}/settings`),
-        ]);
-
+        const orderRes = await fetch(`${apiUrl}/orders/${orderId}`);
         const orderData = await orderRes.json();
-        const settingsData = await settingsRes.json();
 
         setOrder(orderData);
-        setSettings(settingsData);
+        // Set default settings with hardcoded WhatsApp number
+        setSettings({
+          whatsappNumber: '08038753508',
+        });
       } catch (error) {
-        console.error('Failed to fetch data:', error);
+        console.error('Failed to fetch order data:', error);
       } finally {
         setLoading(false);
       }
@@ -69,13 +67,16 @@ export default function OrderConfirmationPage() {
   };
 
   const handleWhatsAppMessage = () => {
-    if (settings?.whatsappNumber) {
-      const message = `Hi, I just placed order ${order?.orderNumber} for ₦${order?.totalPrice}. Please confirm receipt.`;
-      const whatsappUrl = `https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(
-        message
-      )}`;
-      window.open(whatsappUrl, '_blank');
-    }
+    const adminWhatsAppNumber = '08038753508';
+    const message = `Hi, I just placed order ${order?.orderNumber} for ₦${order?.totalPrice}. Please confirm receipt.`;
+    // Convert Nigerian number format to WhatsApp format (234 is Nigeria's country code)
+    const whatsappNumber = adminWhatsAppNumber.startsWith('0') 
+      ? '234' + adminWhatsAppNumber.slice(1)
+      : adminWhatsAppNumber;
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+      message
+    )}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   if (loading) {
@@ -222,24 +223,23 @@ export default function OrderConfirmationPage() {
 
               <div>
                 <p className="font-semibold text-purple-900 mb-2 text-xs sm:text-sm">Contact Restaurant</p>
-                <div className="flex gap-1 sm:gap-2">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-2">
                   <Button
                     size="sm"
-                    className="flex-1 text-[10px] sm:text-xs md:text-sm h-8 sm:h-9 md:h-10"
+                    className="flex-1 text-[10px] sm:text-xs md:text-sm h-9 sm:h-9 md:h-10 w-full"
                     onClick={handleWhatsAppMessage}
                   >
                     <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                    <span className="hidden xs:inline">Send via WhatsApp</span>
-                    <span className="xs:hidden">WhatsApp</span>
+                    <span>Send via WhatsApp</span>
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
-                    className="text-[10px] sm:text-xs md:text-sm h-8 sm:h-9 md:h-10"
+                    className="flex-1 text-[10px] sm:text-xs md:text-sm h-9 sm:h-9 md:h-10 w-full"
                     onClick={handleCopyWhatsApp}
                   >
                     <Copy className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                    {copied ? 'Copied!' : 'Copy'}
+                    {copied ? 'Copied!' : 'Copy Number'}
                   </Button>
                 </div>
               </div>
@@ -248,13 +248,13 @@ export default function OrderConfirmationPage() {
         </Card>
 
         {/* Actions */}
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4">
-          <Link href="/store" className="flex-1">
+        <div className="flex flex-col gap-2 sm:gap-3 md:gap-4">
+          <Link href="/store" className="w-full">
             <Button variant="outline" className="w-full text-xs sm:text-sm md:text-base h-9 sm:h-10">
               Continue Shopping
             </Button>
           </Link>
-          <Link href="/" className="flex-1">
+          <Link href="/" className="w-full">
             <Button className="w-full text-xs sm:text-sm md:text-base h-9 sm:h-10">Go Home</Button>
           </Link>
         </div>

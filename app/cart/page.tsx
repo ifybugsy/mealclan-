@@ -31,22 +31,12 @@ export default function CartPage() {
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchPaymentDetails = async () => {
-      try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-        const response = await fetch(`${apiUrl}/settings`);
-        const settings = await response.json();
-        setPaymentDetails({
-          accountNumber: settings.bankAccountNumber || '',
-          accountName: settings.bankAccountName || '',
-          whatsappNumber: settings.whatsappNumber || '',
-        });
-      } catch (error) {
-        console.error('Failed to fetch payment details:', error);
-      }
-    };
-
-    fetchPaymentDetails();
+    // Set default payment details
+    setPaymentDetails({
+      accountNumber: '',
+      accountName: 'MealClan',
+      whatsappNumber: '08038753508',
+    });
   }, []);
 
   const handleSubmitOrder = async (e: React.FormEvent) => {

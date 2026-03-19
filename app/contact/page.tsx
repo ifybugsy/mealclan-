@@ -21,21 +21,10 @@ export default function ContactPage() {
   const [whatsappNumber, setWhatsappNumber] = useState('');
 
   useEffect(() => {
-    // Fetch WhatsApp number from settings
-    const fetchSettings = async () => {
-      try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-        const response = await fetch(`${apiUrl}/settings`);
-        const data = await response.json();
-        if (data.whatsappNumber) {
-          setWhatsappNumber(data.whatsappNumber);
-        }
-      } catch (error) {
-        console.error('Failed to fetch WhatsApp number:', error);
-      }
-    };
-
-    fetchSettings();
+    // Use hardcoded WhatsApp number for admin
+    // Fallback to API if needed in the future
+    const adminWhatsAppNumber = '08038753508';
+    setWhatsappNumber(adminWhatsAppNumber);
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -71,7 +60,11 @@ export default function ContactPage() {
   const handleWhatsAppContact = () => {
     if (whatsappNumber) {
       const message = `Hi, I have a question about MealClan. ${formData.message || 'Please get in touch with me.'}`;
-      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+      // Convert Nigerian number format to WhatsApp format (234 is Nigeria's country code)
+      const convertedNumber = whatsappNumber.startsWith('0') 
+        ? '234' + whatsappNumber.slice(1)
+        : whatsappNumber;
+      const whatsappUrl = `https://wa.me/${convertedNumber}?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, '_blank');
     } else {
       toast.error('WhatsApp number not available. Please try the contact form instead.');

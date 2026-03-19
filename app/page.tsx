@@ -4,11 +4,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, UtensilsCrossed, Zap } from 'lucide-react';
+import { ShoppingCart, UtensilsCrossed, Zap, Menu, X } from 'lucide-react';
 import { ButtonLoader } from '@/components/button-loader';
 
 export default function HomePage() {
   const [showLoader, setShowLoader] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleOrderClick = () => {
     setShowLoader(true);
@@ -35,25 +36,75 @@ export default function HomePage() {
           <Link href="/" className="flex-shrink-0">
             <Image src="/logo.png" alt="MealClan Logo" width={150} height={150} className="w-auto h-auto max-w-[50px] sm:max-w-[70px] md:max-w-[100px] lg:max-w-[150px]" priority />
           </Link>
-          <div className="flex gap-1 sm:gap-2 md:gap-3 flex-wrap md:flex-nowrap">
+          
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex gap-2 lg:gap-3">
             <Link href="/gallery">
-              <Button variant="ghost" size="sm" className="text-[10px] sm:text-xs md:text-sm text-slate-100 hover:text-white hover:bg-slate-800 px-2 sm:px-3">Gallery</Button>
+              <Button variant="ghost" size="sm" className="text-xs lg:text-sm text-slate-100 hover:text-white hover:bg-slate-800">Gallery</Button>
+            </Link>
+            <Link href="/services">
+              <Button variant="ghost" size="sm" className="text-xs lg:text-sm text-slate-100 hover:text-white hover:bg-slate-800">Services</Button>
             </Link>
             <Link href="/about">
-              <Button variant="ghost" size="sm" className="text-[10px] sm:text-xs md:text-sm text-slate-100 hover:text-white hover:bg-slate-800 px-2 sm:px-3">About</Button>
+              <Button variant="ghost" size="sm" className="text-xs lg:text-sm text-slate-100 hover:text-white hover:bg-slate-800">About</Button>
             </Link>
             <Link href="/contact">
-              <Button variant="ghost" size="sm" className="text-[10px] sm:text-xs md:text-sm text-slate-100 hover:text-white hover:bg-slate-800 px-2 sm:px-3">Contact</Button>
+              <Button variant="ghost" size="sm" className="text-xs lg:text-sm text-slate-100 hover:text-white hover:bg-slate-800">Contact</Button>
             </Link>
-            <button onClick={handleMenuClick} className="px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs md:text-sm font-semibold text-white border border-orange-500 border-2 hover:bg-orange-500 hover:text-white transition-colors rounded-md">Menu</button>
+            <button onClick={handleMenuClick} className="px-3 py-1.5 text-xs lg:text-sm font-semibold text-white border border-orange-500 border-2 hover:bg-orange-500 hover:text-white transition-colors rounded-md">Menu</button>
             <Link href="/cart">
-              <Button size="sm" className="text-[10px] sm:text-xs md:text-sm bg-orange-600 hover:bg-orange-700 px-2 sm:px-3">
-                <ShoppingCart className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4 mr-1" />
-                <span className="hidden sm:inline">Cart</span>
+              <Button size="sm" className="text-xs lg:text-sm bg-orange-600 hover:bg-orange-700">
+                <ShoppingCart className="w-3 h-3 lg:w-4 lg:h-4 mr-1" />
+                <span>Cart</span>
               </Button>
             </Link>
           </div>
+
+          {/* Mobile Menu Button & Cart */}
+          <div className="md:hidden flex items-center gap-2">
+            <Link href="/cart">
+              <Button size="sm" className="text-xs bg-orange-600 hover:bg-orange-700">
+                <ShoppingCart className="w-3 h-3" />
+              </Button>
+            </Link>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 text-white hover:bg-slate-800 rounded-md transition-colors"
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-slate-800/95 backdrop-blur border-t border-slate-700">
+            <div className="px-2 sm:px-4 py-3 space-y-2 flex flex-col">
+              <Link href="/gallery" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="ghost" size="sm" className="w-full text-left text-sm text-slate-100 hover:text-white hover:bg-slate-700">Gallery</Button>
+              </Link>
+              <Link href="/services" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="ghost" size="sm" className="w-full text-left text-sm text-slate-100 hover:text-white hover:bg-slate-700">Services</Button>
+              </Link>
+              <Link href="/about" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="ghost" size="sm" className="w-full text-left text-sm text-slate-100 hover:text-white hover:bg-slate-700">About</Button>
+              </Link>
+              <Link href="/contact" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="ghost" size="sm" className="w-full text-left text-sm text-slate-100 hover:text-white hover:bg-slate-700">Contact</Button>
+              </Link>
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  handleMenuClick();
+                }}
+                className="w-full px-3 py-2 text-sm font-semibold text-white border border-orange-500 border-2 hover:bg-orange-500 hover:text-white transition-colors rounded-md text-left"
+              >
+                Menu
+              </button>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Hero Section */}
