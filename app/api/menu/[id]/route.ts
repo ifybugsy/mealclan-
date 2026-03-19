@@ -28,27 +28,39 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    if (!ObjectId.isValid(params.id)) {
+      console.log('[API] Invalid ObjectId format:', params.id);
+      return NextResponse.json(
+        { error: 'Invalid menu item ID format' },
+        { status: 400 }
+      );
+    }
+
     const { db } = await connectToDatabase();
     const body = await request.json();
 
+    // Build update object with only provided fields
+    const updateData: any = {
+      updatedAt: new Date(),
+    };
+
+    // Only update fields that are provided in the request
+    if (body.name !== undefined) updateData.name = body.name;
+    if (body.description !== undefined) updateData.description = body.description;
+    if (body.price !== undefined) updateData.price = body.price;
+    if (body.category !== undefined) updateData.category = body.category;
+    if (body.image !== undefined) updateData.image = body.image;
+    if (body.available !== undefined) updateData.available = body.available;
+    if (body.finished !== undefined) updateData.finished = body.finished;
+
     const result = await db.collection('menu_items').findOneAndUpdate(
       { _id: new ObjectId(params.id) },
-      {
-        $set: {
-          name: body.name,
-          description: body.description,
-          price: body.price,
-          category: body.category,
-          image: body.image,
-          available: body.available,
-          finished: body.finished !== undefined ? body.finished : false,
-          updatedAt: new Date(),
-        },
-      },
+      { $set: updateData },
       { returnDocument: 'after' }
     );
 
     if (!result.value) {
+      console.log('[API] Menu item not found:', params.id);
       return NextResponse.json({ error: 'Menu item not found' }, { status: 404 });
     }
 
@@ -57,10 +69,10 @@ export async function PATCH(
       _id: result.value._id?.toString(),
     };
 
-    console.log('[API] Menu item updated successfully:', params.id);
-    return NextResponse.json(updatedItem);
+    console.log('[API] Menu item updated successfully:', params.id, 'Updates:', Object.keys(updateData));
+    return NextResponse.json(updatedItem, { status: 200 });
   } catch (error) {
-    console.error('Error updating menu item:', error);
+    console.error('[API] Error updating menu item:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to update menu item';
     return NextResponse.json(
       { error: errorMessage },

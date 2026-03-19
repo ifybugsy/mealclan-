@@ -29,6 +29,7 @@ export default function MenuManagement() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [finishingId, setFinishingId] = useState<string | null>(null);
   const CATEGORIES = ['Rice', 'Soup', 'Pepper Soup', 'Drinks', 'Swallows', 'Sides', 'Desserts', 'Beverages'];
 
   const [formData, setFormData] = useState({
@@ -148,19 +149,27 @@ export default function MenuManagement() {
     if (!confirm('Are you sure you want to delete this item? This action cannot be undone.')) return;
 
     setDeletingId(id);
+    console.log('[v0] Starting delete process for item:', id);
     try {
       const socket = initializeSocket();
-      console.log('[MenuManagement] Deleting item:', id);
+      console.log('[v0] Socket status:', socket.connected);
+      console.log('[v0] Deleting item with ID:', id);
       
-      const response = await fetch(`/api/menu/${id}`, { method: 'DELETE' });
+      const response = await fetch(`/api/menu/${id}`, { 
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      console.log('[v0] Delete API response status:', response.status);
       
       if (!response.ok) {
         const errorData = await response.json();
+        console.log('[v0] Delete API error:', errorData);
         throw new Error(errorData.error || 'Failed to delete item');
       }
 
       const deletedItem = await response.json();
-      console.log('[MenuManagement] Item deleted successfully:', id, deletedItem);
+      console.log('[v0] Item deleted successfully:', id, 'Item name:', deletedItem.name);
       
       // Emit socket event for real-time delete to all clients
       if (socket.connected) {
@@ -168,15 +177,20 @@ export default function MenuManagement() {
           itemId: id,
           timestamp: new Date().toISOString()
         });
-        console.log('[MenuManagement] Emitted menuItemDeleted:', id);
+        console.log('[v0] Emitted menuItemDeleted event:', id);
       }
 
       // Update local state immediately
-      setItems((prev) => prev.filter((item) => item._id !== id));
+      setItems((prev) => {
+        const filtered = prev.filter((item) => item._id !== id);
+        console.log('[v0] Items count before:', prev.length, 'after:', filtered.length);
+        return filtered;
+      });
       setUploadError(null);
     } catch (error) {
-      console.error('[MenuManagement] Failed to delete menu item:', error);
+      console.error('[v0] Failed to delete menu item:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete item';
+      console.log('[v0] Error message:', errorMessage);
       setUploadError(errorMessage);
     } finally {
       setDeletingId(null);
@@ -198,9 +212,11 @@ export default function MenuManagement() {
   };
 
   const handleToggleFinished = async (id: string, currentStatus: boolean) => {
+    setFinishingId(id);
     try {
       const socket = initializeSocket();
       const newStatus = !currentStatus;
+      console.log('[MenuManagement] Toggling finished status for item:', id, 'New status:', newStatus);
       
       const response = await fetch(`/api/menu/${id}`, {
         method: 'PATCH',
@@ -209,10 +225,12 @@ export default function MenuManagement() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update item status');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update item status');
       }
 
       const updatedItem = await response.json();
+      console.log('[MenuManagement] Item status updated successfully:', id, updatedItem);
       
       if (socket.connected) {
         socket.emit('menuItemUpdated', { 
@@ -220,6 +238,7 @@ export default function MenuManagement() {
           item: updatedItem,
           timestamp: new Date().toISOString()
         });
+        console.log('[MenuManagement] Emitted menuItemUpdated:', id);
       }
 
       setItems((prev) =>
@@ -227,9 +246,12 @@ export default function MenuManagement() {
           item._id === id ? { ...item, finished: newStatus } : item
         )
       );
+      setUploadError(null);
     } catch (error) {
-      console.error('Failed to toggle finished status:', error);
+      console.error('[MenuManagement] Failed to toggle finished status:', error);
       setUploadError(error instanceof Error ? error.message : 'Failed to update status');
+    } finally {
+      setFinishingId(null);
     }
   };
 
@@ -471,14 +493,24 @@ export default function MenuManagement() {
                   <Button
                     size="sm"
                     onClick={() => handleToggleFinished(item._id, item.finished || false)}
+                    disabled={finishingId === item._id}
                     className={`w-full text-xs sm:text-sm ${
                       item.finished
                         ? 'bg-gray-500 hover:bg-gray-600'
                         : 'bg-orange-500 hover:bg-orange-600'
-                    } text-white`}
+                    } text-white disabled:opacity-50`}
                   >
-                    <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                    {item.finished ? 'Available Again' : 'Mark Finished'}
+                    {finishingId === item._id ? (
+                      <>
+                        <span className="inline-block w-3 h-3 sm:w-4 sm:h-4 mr-1 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        {item.finished ? 'Restoring...' : 'Marking...'}
+                      </>
+                    ) : (
+                      <>
+                        <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                        {item.finished ? 'Available Again' : 'Mark Finished'}
+                      </>
+                    )}
                   </Button>
                   
                   <div className="flex gap-2">

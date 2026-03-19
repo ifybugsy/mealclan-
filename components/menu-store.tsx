@@ -97,8 +97,7 @@ export function MenuStore({ onAddToCart }: MenuStoreProps) {
 
   const fetchItems = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-      const response = await fetch(`${apiUrl}/menu`);
+      const response = await fetch('/api/menu');
       const data = await response.json();
       const menuItems = Array.isArray(data) ? data : [];
       setItems(menuItems);
@@ -107,7 +106,7 @@ export function MenuStore({ onAddToCart }: MenuStoreProps) {
         setSelectedCategory(firstCategory);
       }
     } catch (error) {
-      console.error('Failed to fetch items:', error);
+      console.error('[v0] Failed to fetch items:', error);
       setItems([]);
     } finally {
       setLoading(false);
