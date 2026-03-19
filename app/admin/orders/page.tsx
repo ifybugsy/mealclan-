@@ -84,102 +84,141 @@ export default function OrdersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Orders</h1>
-        <p className="text-gray-600">Manage and track customer orders</p>
+        <h1 className="text-2xl sm:text-3xl font-bold">Orders</h1>
+        <p className="text-sm sm:text-base text-gray-600">Manage and track customer orders</p>
       </div>
 
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-1 sm:gap-2 flex-wrap">
         <Button
           variant={!filterStatus ? 'default' : 'outline'}
           onClick={() => setFilterStatus('')}
+          size="sm"
+          className="text-xs sm:text-sm"
         >
-          All Orders
+          All
         </Button>
         {statuses.map((status) => (
           <Button
             key={status}
             variant={filterStatus === status ? 'default' : 'outline'}
             onClick={() => setFilterStatus(status)}
-            className="capitalize"
+            className="capitalize text-xs sm:text-sm"
+            size="sm"
           >
-            {status}
+            {status.slice(0, 3)}
           </Button>
         ))}
       </div>
 
       <div className="space-y-4">
         {loading ? (
-          <p>Loading orders...</p>
+          <p className="text-center text-gray-500 text-sm">Loading orders...</p>
         ) : orders.length === 0 ? (
-          <p className="text-center text-gray-500">No orders found</p>
+          <p className="text-center text-gray-500 text-sm">No orders found</p>
         ) : (
           orders.map((order) => (
-            <Card key={order._id}>
-              <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-lg">{order.orderNumber}</CardTitle>
-                    <CardDescription>
-                      {order.customerName} • {order.customerPhone}
+            <Card key={order._id} className="bg-white overflow-hidden">
+              {/* Order Header - Compact and Clear */}
+              <CardHeader className="pb-4 border-b border-gray-200">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                  {/* Order Number and Customer */}
+                  <div className="col-span-1">
+                    <CardTitle className="text-base sm:text-lg font-bold text-gray-900">{order.orderNumber}</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm mt-2 space-y-1">
+                      <div><span className="font-medium text-gray-700">{order.customerName}</span></div>
+                      <div className="text-gray-600">{order.customerPhone}</div>
+                      {order.customerEmail && <div className="text-gray-600 truncate">{order.customerEmail}</div>}
                     </CardDescription>
                   </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold">₦{order.totalPrice}</div>
-                    <div className="flex gap-2 mt-2">
-                      <Badge className={statusColors[order.status] || ''}>
-                        {order.status}
+
+                  {/* Amount and Badges */}
+                  <div className="col-span-1">
+                    <div className="text-2xl sm:text-3xl font-bold text-blue-600">₦{order.totalPrice.toLocaleString()}</div>
+                    <div className="flex gap-2 mt-2 flex-wrap">
+                      <Badge className={`text-xs ${statusColors[order.status] || 'bg-gray-100'}`}>
+                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                       </Badge>
-                      <Badge variant="outline">
-                        {order.paymentStatus === 'completed' ? 'Paid' : 'Pending'}
+                      <Badge variant="outline" className="text-xs">
+                        {order.paymentStatus === 'completed' ? '✓ Paid' : '⏳ Pending'}
                       </Badge>
                     </div>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm font-medium mb-2">Items:</p>
-                  <ul className="space-y-1">
-                    {order.items.map((item, idx) => (
-                      <li key={idx} className="text-sm text-gray-600">
-                        {item.quantity}x {item.name} - ₦{item.price}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
 
-                {order.deliveryType && (
-                  <div>
-                    <p className="text-sm font-medium mb-1">Delivery:</p>
-                    <p className="text-sm text-gray-600 capitalize">
-                      {order.deliveryType === 'delivery' && order.deliveryAddress 
-                        ? `Delivery to: ${order.deliveryAddress}` 
-                        : 'Pickup at Restaurant'}
+                  {/* Quick Order Date */}
+                  <div className="col-span-1">
+                    <p className="text-xs text-gray-500 font-medium">Order Date</p>
+                    <p className="text-sm sm:text-base text-gray-900 font-medium">
+                      {new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      {new Date(order.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
-                )}
+                </div>
+              </CardHeader>
 
-                {order.specialInstructions && (
-                  <div className="bg-amber-50 border border-amber-200 rounded p-3">
-                    <p className="text-sm font-medium mb-1 text-amber-900">Special Instructions:</p>
-                    <p className="text-sm text-amber-800">{order.specialInstructions}</p>
-                  </div>
-                )}
-
-                <div className="max-w-xs">
-                  <p className="text-sm font-medium mb-2">Update Status:</p>
-                  <Select value={order.status} onValueChange={(value) => updateOrderStatus(order._id, value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {statuses.map((status) => (
-                        <SelectItem key={status} value={status} className="capitalize">
-                          {status.charAt(0).toUpperCase() + status.slice(1)}
-                        </SelectItem>
+              {/* Order Content - Better Organization */}
+              <CardContent className="pt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Items Section */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <p className="text-sm font-bold text-gray-900 mb-3 flex items-center">
+                      <span className="w-5 h-5 bg-blue-600 text-white rounded-full text-xs flex items-center justify-center mr-2">{order.items.length}</span>
+                      Items Ordered
+                    </p>
+                    <ul className="space-y-2">
+                      {order.items.map((item, idx) => (
+                        <li key={idx} className="text-sm text-gray-700 flex justify-between">
+                          <span><span className="font-medium">{item.quantity}x</span> {item.name}</span>
+                          <span className="font-medium text-gray-900">₦{item.price.toLocaleString()}</span>
+                        </li>
                       ))}
-                    </SelectContent>
-                  </Select>
+                    </ul>
+                  </div>
+
+                  {/* Delivery & Instructions Section */}
+                  <div className="space-y-4">
+                    {order.deliveryType && (
+                      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                        <p className="text-xs font-bold text-blue-900 uppercase tracking-wide mb-2">Delivery Type</p>
+                        <p className="text-sm text-blue-900 font-medium capitalize">
+                          {order.deliveryType === 'delivery' ? '🚗 Delivery' : '🏪 Pickup'}
+                        </p>
+                        {order.deliveryType === 'delivery' && order.deliveryAddress && (
+                          <p className="text-xs text-blue-800 mt-2">📍 {order.deliveryAddress}</p>
+                        )}
+                      </div>
+                    )}
+
+                    {order.specialInstructions && (
+                      <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+                        <p className="text-xs font-bold text-amber-900 uppercase tracking-wide mb-2">⚠️ Special Instructions</p>
+                        <p className="text-sm text-amber-900">{order.specialInstructions}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Status Update - Bottom Section */}
+                <div className="mt-6 pt-4 border-t border-gray-200">
+                  <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+                    <div>
+                      <p className="text-sm font-bold text-gray-900 mb-2">Update Order Status</p>
+                      <p className="text-xs text-gray-600">Current: <span className="font-medium capitalize">{order.status}</span></p>
+                    </div>
+                    <Select value={order.status} onValueChange={(value) => updateOrderStatus(order._id, value)}>
+                      <SelectTrigger className="w-full sm:w-auto text-sm">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {statuses.map((status) => (
+                          <SelectItem key={status} value={status} className="capitalize">
+                            {status.charAt(0).toUpperCase() + status.slice(1)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </CardContent>
             </Card>

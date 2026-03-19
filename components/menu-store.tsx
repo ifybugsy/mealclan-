@@ -118,8 +118,8 @@ export function MenuStore({ onAddToCart }: MenuStoreProps) {
     : [];
   
   const filteredItems = selectedCategory && items && items.length > 0
-    ? items.filter((item) => item.category === selectedCategory && !item.finished)
-    : items.filter((item) => !item.finished);
+    ? items.filter((item) => item.category === selectedCategory)
+    : items;
 
   const handleOpenModal = (item: MenuItem) => {
     setSelectedItem(item);
@@ -204,7 +204,12 @@ export function MenuStore({ onAddToCart }: MenuStoreProps) {
                 </div>
 
                 {/* Status Badges */}
-                {!item.available && (
+                {item.finished && (
+                  <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
+                    Finished
+                  </div>
+                )}
+                {!item.available && !item.finished && (
                   <div className="absolute top-3 left-3 bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full shadow-md">
                     Unavailable
                   </div>
@@ -228,10 +233,17 @@ export function MenuStore({ onAddToCart }: MenuStoreProps) {
                   </span>
                   <Button
                     size="sm"
-                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-full h-10 w-10 p-0 flex items-center justify-center shadow-md"
+                    disabled={item.finished}
+                    className={`${
+                      item.finished 
+                        ? 'bg-gray-400 cursor-not-allowed' 
+                        : 'bg-blue-600 hover:bg-blue-700'
+                    } text-white rounded-full h-10 w-10 p-0 flex items-center justify-center shadow-md`}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleOpenModal(item);
+                      if (!item.finished) {
+                        handleOpenModal(item);
+                      }
                     }}
                   >
                     <Plus className="w-5 h-5" />
