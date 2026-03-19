@@ -74,6 +74,15 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Validate ObjectId format
+    if (!ObjectId.isValid(params.id)) {
+      console.log('[API] Invalid ObjectId format:', params.id);
+      return NextResponse.json(
+        { error: 'Invalid menu item ID format' },
+        { status: 400 }
+      );
+    }
+
     const { db } = await connectToDatabase();
     
     // First, find the item to return it
@@ -82,6 +91,7 @@ export async function DELETE(
       .findOne({ _id: new ObjectId(params.id) });
 
     if (!item) {
+      console.log('[API] Menu item not found:', params.id);
       return NextResponse.json(
         { error: 'Menu item not found' },
         { status: 404 }
@@ -94,6 +104,7 @@ export async function DELETE(
       .deleteOne({ _id: new ObjectId(params.id) });
 
     if (result.deletedCount === 0) {
+      console.log('[API] Failed to delete menu item:', params.id);
       return NextResponse.json(
         { error: 'Menu item not found' },
         { status: 404 }
@@ -105,10 +116,10 @@ export async function DELETE(
       _id: item._id?.toString(),
     };
 
-    console.log('[API] Menu item deleted successfully:', params.id);
-    return NextResponse.json(deletedItem);
+    console.log('[API] Menu item deleted successfully:', params.id, 'Name:', item.name);
+    return NextResponse.json(deletedItem, { status: 200 });
   } catch (error) {
-    console.error('Error deleting menu item:', error);
+    console.error('[API] Error deleting menu item:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to delete menu item';
     return NextResponse.json(
       { error: errorMessage },

@@ -28,6 +28,7 @@ export default function MenuManagement() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const CATEGORIES = ['Rice', 'Soup', 'Pepper Soup', 'Drinks', 'Swallows', 'Sides', 'Desserts', 'Beverages'];
 
   const [formData, setFormData] = useState({
@@ -144,8 +145,9 @@ export default function MenuManagement() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this item?')) return;
+    if (!confirm('Are you sure you want to delete this item? This action cannot be undone.')) return;
 
+    setDeletingId(id);
     try {
       const socket = initializeSocket();
       console.log('[MenuManagement] Deleting item:', id);
@@ -153,12 +155,12 @@ export default function MenuManagement() {
       const response = await fetch(`/api/menu/${id}`, { method: 'DELETE' });
       
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to delete item');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete item');
       }
 
       const deletedItem = await response.json();
-      console.log('[MenuManagement] Item deleted:', id);
+      console.log('[MenuManagement] Item deleted successfully:', id, deletedItem);
       
       // Emit socket event for real-time delete to all clients
       if (socket.connected) {
@@ -171,9 +173,13 @@ export default function MenuManagement() {
 
       // Update local state immediately
       setItems((prev) => prev.filter((item) => item._id !== id));
+      setUploadError(null);
     } catch (error) {
       console.error('[MenuManagement] Failed to delete menu item:', error);
-      setUploadError(error instanceof Error ? error.message : 'Failed to delete item');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete item';
+      setUploadError(errorMessage);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -489,10 +495,20 @@ export default function MenuManagement() {
                       variant="destructive"
                       size="sm"
                       onClick={() => handleDelete(item._id)}
+                      disabled={deletingId === item._id}
                       className="flex-1 text-xs sm:text-sm"
                     >
-                      <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                      Delete
+                      {deletingId === item._id ? (
+                        <>
+                          <span className="inline-block w-3 h-3 sm:w-4 sm:h-4 mr-1 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                          Deleting...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                          Delete
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>
