@@ -15,7 +15,6 @@ export default function CartPage() {
   const { cart, removeFromCart, updateQuantity, clearCart, total } = useCart();
   const [selectedPayment, setSelectedPayment] = useState('cash');
   const [selectedDelivery, setSelectedDelivery] = useState('pickup');
-  
   const deliveryFee = selectedDelivery === 'delivery' ? DELIVERY_FEE : 0;
   const totalAmount = total + deliveryFee;
   const [formData, setFormData] = useState({
@@ -308,14 +307,14 @@ export default function CartPage() {
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Email</label>
+                      <label className="text-sm font-medium">Email <span className="text-gray-400 text-xs">(Optional)</span></label>
                       <Input
                         type="email"
                         value={formData.customerEmail}
                         onChange={(e) =>
                           setFormData({ ...formData, customerEmail: e.target.value })
                         }
-                        required
+                        placeholder="your@email.com (optional)"
                       />
                     </div>
                   </CardContent>

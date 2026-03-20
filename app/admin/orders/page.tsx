@@ -232,18 +232,23 @@ export default function OrdersPage() {
                   </div>
 
                   {/* Items Section */}
-                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                    <p className="text-sm font-bold text-gray-900 mb-3 flex items-center">
-                      <span className="w-5 h-5 bg-blue-600 text-white rounded-full text-xs flex items-center justify-center mr-2">{order.items.length}</span>
-                      Items Ordered
-                    </p>
+                  <div className="bg-blue-50 rounded-lg p-4 border-2 border-blue-300 shadow-md">
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="text-sm font-bold text-gray-900 flex items-center">
+                        <span className="w-6 h-6 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-full text-xs font-bold flex items-center justify-center mr-2 shadow-md">{order.items.length}</span>
+                        Items Ordered
+                      </p>
+                      <span className="bg-blue-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full">
+                        {order.items.reduce((sum, item) => sum + item.quantity, 0)} TOTAL ITEMS
+                      </span>
+                    </div>
                     <ul className="space-y-3">
                       {order.items.map((item, idx) => (
-                        <li key={idx} className="text-xs sm:text-sm bg-white p-3 rounded border border-blue-100">
+                        <li key={idx} className="text-xs sm:text-sm bg-white p-3 rounded border border-blue-100 hover:shadow-sm transition-shadow">
                           {/* Item Name and Price */}
                           <div className="flex justify-between gap-2 mb-2">
                             <span className="font-semibold">
-                              <span className="inline-block bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-[10px] mr-1.5">{item.quantity}</span>
+                              <span className="inline-block bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-[10px] mr-1.5 font-bold">{item.quantity}</span>
                               <span className="text-gray-900">{item.name}</span>
                             </span>
                             <span className="font-bold text-blue-600">₦{item.price.toLocaleString()}</span>
