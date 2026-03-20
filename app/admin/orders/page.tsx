@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRealTimeOrders, joinAdminRoom, leaveAdminRoom } from '@/hooks/use-socket';
 
@@ -42,7 +43,7 @@ export default function OrdersPage() {
   const { orders: realTimeOrders, isConnected } = useRealTimeOrders();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+  const [selectedOrderForItems, setSelectedOrderForItems] = useState<Order | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
   // Auto-refresh every 1 minute
@@ -249,8 +250,8 @@ export default function OrdersPage() {
                         </div>
                       )}
                       
-                      {/* Delivery Address - Show actual address or nothing */}
-                      {order.deliveryAddress && order.deliveryType === 'delivery' ? (
+                      {/* Delivery Address - Always show real address if provided */}
+                      {order.deliveryAddress ? (
                         <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-3 rounded-lg border-2 border-orange-300 shadow-md">
                           <p className="text-orange-900 text-[10px] font-bold mb-2 uppercase tracking-wide flex items-center">
                             <span className="text-lg mr-1.5">📍</span>
@@ -260,20 +261,15 @@ export default function OrdersPage() {
                             {order.deliveryAddress}
                           </p>
                         </div>
-                      ) : (
-                        <div className="bg-gray-100 p-3 rounded-lg border border-gray-300">
-                          <p className="text-gray-600 text-[10px] font-semibold mb-1 uppercase">Delivery Address</p>
-                          <p className="text-gray-500 text-xs italic">Pickup order - No delivery address</p>
-                        </div>
-                      )}
+                      ) : null}
                     </div>
                   </div>
 
-                  {/* Items Section - Expandable */}
+                  {/* Items Section - Modal Dialog */}
                   <div className="bg-blue-50 rounded-lg p-4 border-2 border-blue-300 shadow-md">
                     <button
-                      onClick={() => setExpandedItems(prev => ({ ...prev, [order._id]: !prev[order._id] }))}
-                      className="w-full text-left hover:opacity-80 transition-opacity"
+                      onClick={() => setSelectedOrderForItems(order)}
+                      className="w-full text-left hover:bg-blue-100 transition-colors rounded p-2"
                     >
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-bold text-gray-900 flex items-center">
@@ -284,43 +280,12 @@ export default function OrdersPage() {
                           <span className="bg-blue-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full">
                             {order.items.reduce((sum, item) => sum + item.quantity, 0)} TOTAL ITEMS
                           </span>
-                          <span className={`text-2xl transition-transform ${expandedItems[order._id] ? 'rotate-180' : ''}`}>
-                            ▼
+                          <span className="text-blue-600 font-bold cursor-pointer hover:text-blue-800">
+                            View
                           </span>
                         </div>
                       </div>
                     </button>
-                    
-                    {expandedItems[order._id] && (
-                      <ul className="space-y-3 mt-4 pt-4 border-t border-blue-200">
-                        {order.items.map((item, idx) => (
-                          <li key={idx} className="text-xs sm:text-sm bg-white p-3 rounded border border-blue-100 hover:shadow-sm transition-shadow">
-                            {/* Item Name and Price */}
-                            <div className="flex justify-between gap-2 mb-2">
-                              <span className="font-semibold">
-                                <span className="inline-block bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-[10px] mr-1.5 font-bold">{item.quantity}</span>
-                                <span className="text-gray-900">{item.name}</span>
-                              </span>
-                              <span className="font-bold text-blue-600">₦{item.price.toLocaleString()}</span>
-                            </div>
-                            
-                            {/* Soup Options - Show if available */}
-                            {(item as any).soupOptions && (item as any).soupOptions.length > 0 ? (
-                              <div className="mt-2 pt-2 border-t border-amber-200">
-                                <p className="text-[10px] font-bold text-amber-700 mb-1.5 uppercase tracking-wide">Served with:</p>
-                                <div className="flex flex-wrap gap-1.5">
-                                  {(item as any).soupOptions.map((option: string) => (
-                                    <span key={option} className="inline-flex items-center bg-gradient-to-r from-amber-100 to-orange-100 text-amber-900 text-[11px] font-bold px-3 py-1.5 rounded-full border border-amber-400 shadow-sm">
-                                      {option}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                            ) : null}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
                   </div>
 
                   {/* Delivery & Instructions Section */}
@@ -374,6 +339,52 @@ export default function OrdersPage() {
             </Card>
           ))
         )}
+
+        {/* Items Modal Dialog */}
+        <Dialog open={!!selectedOrderForItems} onOpenChange={(open) => !open && setSelectedOrderForItems(null)}>
+          <DialogContent className="max-w-2xl max-h-96 overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Order Items - {selectedOrderForItems?.orderNumber}</DialogTitle>
+            </DialogHeader>
+            
+            {selectedOrderForItems && (
+              <div className="space-y-4">
+                <div className="text-sm font-semibold text-gray-700">
+                  Total Items: {selectedOrderForItems.items.reduce((sum, item) => sum + item.quantity, 0)}
+                </div>
+                
+                <ul className="space-y-4">
+                  {selectedOrderForItems.items.map((item, idx) => (
+                    <li key={idx} className="bg-white p-4 rounded border border-blue-200">
+                      {/* Item Header */}
+                      <div className="flex justify-between gap-2 mb-3">
+                        <div>
+                          <span className="inline-block bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm mr-2 font-bold">{item.quantity}</span>
+                          <span className="text-base font-bold text-gray-900">{item.name}</span>
+                        </div>
+                        <span className="font-bold text-blue-600 text-base">₦{item.price.toLocaleString()}</span>
+                      </div>
+                      
+                      {/* Soup Options */}
+                      {(item as any).soupOptions && (item as any).soupOptions.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-amber-200">
+                          <p className="text-xs font-bold text-amber-700 mb-2 uppercase tracking-wide">Served with:</p>
+                          <div className="flex flex-wrap gap-2">
+                            {(item as any).soupOptions.map((option: string) => (
+                              <span key={option} className="inline-flex items-center bg-gradient-to-r from-amber-100 to-orange-100 text-amber-900 text-sm font-bold px-4 py-2 rounded-full border-2 border-amber-400 shadow-sm">
+                                {option}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

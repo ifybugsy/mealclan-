@@ -195,9 +195,14 @@ export default function CartPage() {
                           {item.name}
                         </h3>
                         {(item as any).soupOptions && (item as any).soupOptions.length > 0 && (
-                          <p className="text-xs text-amber-700 font-medium mt-1 bg-amber-50 px-2 py-1 rounded w-fit">
-                            With: {(item as any).soupOptions.join(', ')}
-                          </p>
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">With:</span>
+                            {(item as any).soupOptions.map((option: string) => (
+                              <span key={option} className="text-xs font-bold text-amber-900 bg-amber-100 px-2 py-0.5 rounded border border-amber-300">
+                                {option}
+                              </span>
+                            ))}
+                          </div>
                         )}
                         <p className="text-sm text-gray-600 mt-1">₦{item.price.toLocaleString()} each</p>
                         <p className="text-xs sm:text-sm text-blue-600 font-semibold mt-2">
