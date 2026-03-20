@@ -67,12 +67,21 @@ export default function CartPage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
 
     // Emit real-time updates to admin dashboard
-    if (socket && socket.connected) {
-      if (field === 'customerPhone') {
-        socket.emit('cartUpdate', { type: 'phone', value });
-      } else if (field === 'deliveryAddress' && selectedDelivery === 'delivery') {
-        socket.emit('cartUpdate', { type: 'deliveryAddress', value });
-      }
+    if (socket) {
+      const emitUpdate = () => {
+        if (socket.connected) {
+          console.log(`[v0] Emitting ${field} update:`, value);
+          if (field === 'customerPhone') {
+            socket.emit('cartUpdate', { type: 'phone', value });
+          } else if (field === 'deliveryAddress') {
+            socket.emit('cartUpdate', { type: 'deliveryAddress', value });
+          }
+        } else {
+          // Retry when connected
+          socket.once('connect', emitUpdate);
+        }
+      };
+      emitUpdate();
     }
   };
 
@@ -80,8 +89,16 @@ export default function CartPage() {
     setSelectedDelivery(value);
     
     // Emit delivery method change to admin
-    if (socket && socket.connected) {
-      socket.emit('cartUpdate', { type: 'deliveryMethod', value });
+    if (socket) {
+      const emitUpdate = () => {
+        if (socket.connected) {
+          console.log('[v0] Emitting delivery method update:', value);
+          socket.emit('cartUpdate', { type: 'deliveryMethod', value });
+        } else {
+          socket.once('connect', emitUpdate);
+        }
+      };
+      emitUpdate();
     }
   };
 

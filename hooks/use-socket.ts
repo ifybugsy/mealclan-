@@ -201,7 +201,10 @@ export function useRealTimeCartUpdates(
   const [cartUpdates, setCartUpdates] = useState<any>({});
 
   useEffect(() => {
-    if (!socket || !isConnected) return;
+    if (!socket) {
+      console.log('[useRealTimeCartUpdates] Socket not initialized yet');
+      return;
+    }
 
     const handleCartUpdate = (data: any) => {
       console.log('[useRealTimeCartUpdates] Cart update received:', data);
@@ -209,12 +212,14 @@ export function useRealTimeCartUpdates(
       onCartUpdate?.(data);
     };
 
+    // Listen for cart updates
     socket.on('cartUpdate', handleCartUpdate);
+    console.log('[useRealTimeCartUpdates] Listening for cartUpdate events');
 
     return () => {
       socket.off('cartUpdate', handleCartUpdate);
     };
-  }, [socket, isConnected, onCartUpdate]);
+  }, [socket]);
 
   return { cartUpdates, isConnected };
 }

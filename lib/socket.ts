@@ -132,7 +132,7 @@ export function joinAdminRoom(): void {
   const join = () => {
     if (s.connected) {
       console.log('[Socket] Joining admin room');
-      s.emit('joinAdmin');
+      s.emit('joinAdminRoom');
     } else {
       console.warn('[Socket] Cannot join room: socket not connected, retrying...');
       // Retry after a short delay
@@ -147,7 +147,7 @@ export function leaveAdminRoom(): void {
   const s = socket || initializeSocket();
   if (s.connected) {
     console.log('[Socket] Leaving admin room');
-    s.emit('leaveAdmin');
+    s.emit('leaveAdminRoom');
   }
 }
 
