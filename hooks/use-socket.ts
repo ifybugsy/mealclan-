@@ -194,15 +194,54 @@ export function usePendingOrdersCount() {
   return count;
 }
 
+export function useRealTimeCartUpdates(
+  onCartUpdate?: (data: any) => void
+) {
+  const { socket, isConnected } = useSocket();
+  const [cartUpdates, setCartUpdates] = useState<any>({});
+
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+
+    const handleCartUpdate = (data: any) => {
+      console.log('[useRealTimeCartUpdates] Cart update received:', data);
+      setCartUpdates(data);
+      onCartUpdate?.(data);
+    };
+
+    socket.on('cartUpdate', handleCartUpdate);
+
+    return () => {
+      socket.off('cartUpdate', handleCartUpdate);
+    };
+  }, [socket, isConnected, onCartUpdate]);
+
+  return { cartUpdates, isConnected };
+}
+
 let socketInstance: any = null;
 
 export const joinAdminRoom = () => {
   if (!socketInstance) {
     socketInstance = initializeSocket();
   }
-  socketInstance?.emit('joinAdmin');
+  
+  if (socketInstance?.connected) {
+    console.log('[joinAdminRoom] Emitting joinAdminRoom event');
+    socketInstance?.emit('joinAdminRoom');
+  } else {
+    console.warn('[joinAdminRoom] Socket not connected, retrying...');
+    // Retry when socket connects
+    socketInstance?.once('connect', () => {
+      console.log('[joinAdminRoom] Socket connected, emitting joinAdminRoom');
+      socketInstance?.emit('joinAdminRoom');
+    });
+  }
 };
 
 export const leaveAdminRoom = () => {
-  socketInstance?.emit('leaveAdmin');
+  if (socketInstance?.connected) {
+    console.log('[leaveAdminRoom] Emitting leaveAdminRoom event');
+    socketInstance?.emit('leaveAdminRoom');
+  }
 };

@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Minus, ShoppingCart, Zap } from 'lucide-react';
+import { initializeSocket } from '@/lib/socket';
 
 interface MenuItem {
   _id: string;
@@ -36,7 +37,13 @@ export function ItemDetailModal({
 }: ItemDetailModalProps) {
   const [quantity, setQuantity] = useState(1);
   const [soupOptions, setSoupOptions] = useState<string[]>([]);
+  const [socket, setSocket] = useState<any>(null);
   const SOUP_OPTIONS = ['Garri', 'Fufu', 'Semo'];
+
+  useEffect(() => {
+    const s = initializeSocket();
+    setSocket(s);
+  }, []);
 
   if (!item) return null;
 
@@ -46,11 +53,22 @@ export function ItemDetailModal({
   };
 
   const handleSoupOptionChange = (option: string) => {
-    setSoupOptions((prev) =>
-      prev.includes(option)
+    setSoupOptions((prev) => {
+      const updated = prev.includes(option)
         ? prev.filter((o) => o !== option)
-        : [...prev, option]
-    );
+        : [...prev, option];
+      
+      // Emit soup options update to admin dashboard in real-time
+      if (socket && socket.connected) {
+        socket.emit('cartUpdate', { 
+          type: 'soupOptions',
+          itemName: item?.name,
+          value: updated 
+        });
+      }
+      
+      return updated;
+    });
   };
 
   const handleAddToCart = () => {

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useRealTimeOrders, joinAdminRoom, leaveAdminRoom } from '@/hooks/use-socket';
+import { useRealTimeOrders, joinAdminRoom, leaveAdminRoom, useRealTimeCartUpdates } from '@/hooks/use-socket';
 
 interface Order {
   _id: string;
@@ -41,10 +41,12 @@ const statusColors: Record<string, string> = {
 export default function OrdersPage() {
   const [filterStatus, setFilterStatus] = useState('');
   const { orders: realTimeOrders, isConnected } = useRealTimeOrders();
+  const { cartUpdates } = useRealTimeCartUpdates();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrderForItems, setSelectedOrderForItems] = useState<Order | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [liveOrderData, setLiveOrderData] = useState<any>({ phone: '', deliveryAddress: '', soupOptions: [] });
 
   // Auto-refresh every 1 minute
   useEffect(() => {
@@ -89,16 +91,36 @@ export default function OrdersPage() {
   }, [isConnected, realTimeOrders]);
 
   useEffect(() => {
-    console.log('[OrdersPage] Socket connected status:', isConnected);
-    if (isConnected) {
-      console.log('[OrdersPage] Joining admin room');
-      joinAdminRoom();
+    // Handle real-time cart updates from customer checkout
+    if (cartUpdates) {
+      setLiveOrderData((prev: any) => {
+        const updated = { ...prev };
+        if (cartUpdates.type === 'phone') {
+          updated.phone = cartUpdates.value;
+        } else if (cartUpdates.type === 'deliveryAddress') {
+          updated.deliveryAddress = cartUpdates.value;
+        } else if (cartUpdates.type === 'soupOptions') {
+          updated.soupOptions = cartUpdates.value || [];
+        }
+        return updated;
+      });
     }
+  }, [cartUpdates]);
 
-    return () => {
-      console.log('[OrdersPage] Leaving admin room');
-      leaveAdminRoom();
-    };
+  useEffect(() => {
+    if (isConnected) {
+      console.log('[OrdersPage] Socket connected, joining admin room');
+      // Small delay to ensure socket is fully initialized
+      const timer = setTimeout(() => {
+        joinAdminRoom();
+      }, 500);
+      
+      return () => {
+        clearTimeout(timer);
+        console.log('[OrdersPage] Leaving admin room');
+        leaveAdminRoom();
+      };
+    }
   }, [isConnected]);
 
   // Filter orders based on status selection
@@ -150,6 +172,55 @@ export default function OrdersPage() {
         <h1 className="text-2xl sm:text-3xl font-bold">Orders</h1>
         <p className="text-sm sm:text-base text-gray-600">Manage and track customer orders</p>
       </div>
+
+      {/* Live Order Being Placed - Real-time Updates */}
+      {(liveOrderData.phone || liveOrderData.deliveryAddress || liveOrderData.soupOptions?.length > 0) && (
+        <Card className="border-2 border-green-400 bg-gradient-to-r from-green-50 to-emerald-50 shadow-lg">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <span className="inline-block w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
+              Live Order Being Placed (Real-time Preview)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {/* Phone Update */}
+            {liveOrderData.phone && (
+              <div className="bg-white p-3 rounded border-l-4 border-green-500 shadow-sm">
+                <p className="text-[10px] font-semibold text-gray-600 mb-1 uppercase">Customer Phone</p>
+                <p className="text-sm font-bold text-gray-900">{liveOrderData.phone}</p>
+              </div>
+            )}
+
+            {/* Delivery Address Update */}
+            {liveOrderData.deliveryAddress && (
+              <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-3 rounded border-l-4 border-orange-500 shadow-sm">
+                <p className="text-[10px] font-semibold text-orange-700 mb-1 uppercase flex items-center gap-1">
+                  📍 Delivery Address
+                </p>
+                <p className="text-sm font-bold text-gray-900 break-words">{liveOrderData.deliveryAddress}</p>
+              </div>
+            )}
+
+            {/* Soup Options Update */}
+            {liveOrderData.soupOptions?.length > 0 && (
+              <div className="bg-amber-50 p-3 rounded border-l-4 border-amber-500 shadow-sm">
+                <p className="text-[10px] font-semibold text-amber-700 mb-2 uppercase">Selected Soup Options</p>
+                <div className="flex flex-wrap gap-2">
+                  {liveOrderData.soupOptions.map((option: string) => (
+                    <span key={option} className="text-xs font-bold text-amber-900 bg-amber-100 px-3 py-1 rounded-full border border-amber-400">
+                      ✓ {option}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <p className="text-xs text-gray-500 italic text-center pt-2">
+              Updates appear as customer fills in checkout form
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="flex gap-1 sm:gap-2 flex-wrap">

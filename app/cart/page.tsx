@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Trash2, Plus, Minus, Copy, MessageCircle } from 'lucide-react';
+import { initializeSocket } from '@/lib/socket';
 
 const DELIVERY_FEE = 1500;
 
@@ -28,8 +29,13 @@ export default function CartPage() {
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [paymentDetails, setPaymentDetails] = useState<{ accountNumber?: string; accountName?: string; bankName?: string; whatsappNumber?: string }>({});
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [socket, setSocket] = useState<any>(null);
 
   useEffect(() => {
+    // Initialize socket
+    const s = initializeSocket();
+    setSocket(s);
+
     // Fetch payment details from settings
     const fetchPaymentDetails = async () => {
       try {
@@ -56,6 +62,35 @@ export default function CartPage() {
     
     fetchPaymentDetails();
   }, []);
+
+  const handleFormDataChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
+    // Emit real-time updates to admin dashboard
+    if (socket && socket.connected) {
+      if (field === 'customerPhone') {
+        socket.emit('cartUpdate', { type: 'phone', value });
+      } else if (field === 'deliveryAddress' && selectedDelivery === 'delivery') {
+        socket.emit('cartUpdate', { type: 'deliveryAddress', value });
+      }
+    }
+  };
+
+  const handleDeliveryChange = (value: string) => {
+    setSelectedDelivery(value);
+    
+    // Emit delivery method change to admin
+    if (socket && socket.connected) {
+      socket.emit('cartUpdate', { type: 'deliveryMethod', value });
+    }
+  };
+
+  const handleSoupOptionsChange = (soupOptions: string[]) => {
+    // Emit soup options to admin dashboard
+    if (socket && socket.connected) {
+      socket.emit('cartUpdate', { type: 'soupOptions', value: soupOptions });
+    }
+  };
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -306,7 +341,7 @@ export default function CartPage() {
                         type="tel"
                         value={formData.customerPhone}
                         onChange={(e) =>
-                          setFormData({ ...formData, customerPhone: e.target.value })
+                          handleFormDataChange('customerPhone', e.target.value)
                         }
                         required
                       />
@@ -345,7 +380,7 @@ export default function CartPage() {
                         type="radio"
                         value="delivery"
                         checked={selectedDelivery === 'delivery'}
-                        onChange={(e) => setSelectedDelivery(e.target.value)}
+                        onChange={(e) => handleDeliveryChange(e.target.value)}
                       />
                       <span>Delivery to My Address</span>
                     </label>
@@ -357,7 +392,7 @@ export default function CartPage() {
                           type="text"
                           value={formData.deliveryAddress}
                           onChange={(e) =>
-                            setFormData({ ...formData, deliveryAddress: e.target.value })
+                            handleFormDataChange('deliveryAddress', e.target.value)
                           }
                           required
                         />
