@@ -112,10 +112,16 @@ export default function OrdersPage() {
       setOrders(displayOrders);
     }
     setLoading(false);
-    console.log('[v0] Current orders:', displayOrders);
+    
+    // Debug logging
     if (displayOrders.length > 0) {
+      console.log('[v0] Orders data:', displayOrders);
+      console.log('[v0] First order:', displayOrders[0]);
       console.log('[v0] First order delivery address:', displayOrders[0].deliveryAddress);
       console.log('[v0] First order items:', displayOrders[0].items);
+      displayOrders[0].items.forEach((item, idx) => {
+        console.log(`[v0] Item ${idx} soup options:`, (item as any).soupOptions);
+      });
     }
   }, [realTimeOrders, filterStatus]);
 
@@ -256,15 +262,20 @@ export default function OrdersPage() {
                       )}
                       
                       {/* Delivery Address - Always display if it exists */}
-                      {order.deliveryAddress && order.deliveryAddress.trim() !== '' && (
-                        <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-3 rounded-lg border-2 border-orange-300 shadow-md">
-                          <p className="text-orange-900 text-[10px] font-bold mb-2 uppercase tracking-wide flex items-center">
-                            <span className="text-lg mr-1.5">📍</span>
+                      {order.deliveryAddress && order.deliveryAddress.trim() !== '' ? (
+                        <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-4 rounded-lg border-2 border-orange-300 shadow-md">
+                          <p className="text-orange-900 text-[11px] font-bold mb-2.5 uppercase tracking-wide flex items-center">
+                            <span className="text-lg mr-2">📍</span>
                             Delivery Address
                           </p>
-                          <p className="font-bold text-gray-900 break-words leading-relaxed bg-white p-2 rounded border-l-4 border-orange-500 text-sm">
+                          <p className="font-bold text-gray-900 break-words leading-relaxed bg-white p-3 rounded border-l-4 border-orange-500 text-base">
                             {order.deliveryAddress}
                           </p>
+                        </div>
+                      ) : (
+                        <div className="bg-gray-50 p-4 rounded-lg border-2 border-gray-300">
+                          <p className="text-gray-600 text-[11px] font-bold mb-2 uppercase tracking-wide">📍 Delivery Address</p>
+                          <p className="text-gray-500 text-sm italic">No delivery address provided</p>
                         </div>
                       )}
                     </div>
@@ -383,15 +394,15 @@ export default function OrdersPage() {
                           <p className="text-sm font-bold text-amber-800 mb-3 uppercase tracking-wider">Selected Options:</p>
                           <div className="flex flex-wrap gap-3">
                             {(item as any).soupOptions.map((option: string) => (
-                              <span key={option} className="inline-flex items-center bg-gradient-to-r from-amber-200 to-orange-200 text-amber-900 text-base font-bold px-5 py-2.5 rounded-full border-2 border-amber-500 shadow-md hover:shadow-lg transition-shadow">
+                              <span key={option} className="inline-flex items-center bg-gradient-to-r from-amber-200 to-orange-200 text-amber-900 text-base font-bold px-5 py-2.5 rounded-full border-2 border-amber-500 shadow-md">
                                 ✓ {option}
                               </span>
                             ))}
                           </div>
                         </div>
                       ) : (
-                        <div className="mt-4 pt-4 border-t border-gray-300 text-gray-500 text-sm italic">
-                          No options selected
+                        <div className="mt-4 pt-4 border-t border-gray-300 bg-gray-50 p-4 rounded-lg">
+                          <p className="text-gray-500 text-sm italic">No soup options selected</p>
                         </div>
                       )}
                     </li>
