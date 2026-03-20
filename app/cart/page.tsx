@@ -27,16 +27,35 @@ export default function CartPage() {
   });
   const [orderProcessing, setOrderProcessing] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
-  const [paymentDetails, setPaymentDetails] = useState<{ accountNumber?: string; accountName?: string; whatsappNumber?: string }>({});
+  const [paymentDetails, setPaymentDetails] = useState<{ accountNumber?: string; accountName?: string; bankName?: string; whatsappNumber?: string }>({});
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   useEffect(() => {
-    // Set default payment details
-    setPaymentDetails({
-      accountNumber: '',
-      accountName: 'MealClan',
-      whatsappNumber: '08038753508',
-    });
+    // Fetch payment details from settings
+    const fetchPaymentDetails = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+        const response = await fetch(`${apiUrl}/settings`);
+        const data = await response.json();
+        setPaymentDetails({
+          accountNumber: data.bankAccountNumber || '',
+          accountName: data.bankAccountName || 'MealClan',
+          bankName: data.bankName || '',
+          whatsappNumber: data.whatsappNumber || '08038753508',
+        });
+      } catch (error) {
+        console.error('Failed to fetch payment details:', error);
+        // Fallback values
+        setPaymentDetails({
+          accountNumber: '',
+          accountName: 'MealClan',
+          bankName: '',
+          whatsappNumber: '08038753508',
+        });
+      }
+    };
+    
+    fetchPaymentDetails();
   }, []);
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
@@ -364,50 +383,63 @@ export default function CartPage() {
                     </label>
 
                     {selectedPayment === 'transfer' && (
-                      <div className="space-y-2 sm:space-y-3 bg-blue-50 p-2 sm:p-3 rounded-lg border border-blue-200">
-                        {paymentDetails.accountNumber && (
-                          <div>
-                            <p className="text-[10px] sm:text-xs font-semibold text-gray-700 mb-1">Account Number</p>
-                            <div className="flex items-center gap-1.5 sm:gap-2 bg-white p-1.5 sm:p-2 rounded">
-                              <span className="text-xs sm:text-sm font-mono font-bold flex-1">{paymentDetails.accountNumber}</span>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(paymentDetails.accountNumber || '');
-                                  setCopiedField('account');
-                                  setTimeout(() => setCopiedField(null), 2000);
-                                }}
-                                className="p-1 hover:bg-gray-100 rounded transition-colors"
-                                title="Copy account number"
-                              >
-                                <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-blue-600" />
-                              </button>
+                      <div className="space-y-3 sm:space-y-4 bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-200">
+                        <div className="grid grid-cols-1 gap-3 sm:gap-4">
+                          {/* Bank Name */}
+                          {paymentDetails.bankName && (
+                            <div>
+                              <p className="text-[10px] sm:text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">Bank Name</p>
+                              <p className="text-xs sm:text-sm bg-white p-2 sm:p-3 rounded font-bold text-gray-900">{paymentDetails.bankName}</p>
                             </div>
-                            {copiedField === 'account' && <p className="text-[10px] text-green-600">Copied!</p>}
-                          </div>
-                        )}
-                        
-                        {paymentDetails.accountName && (
-                          <div>
-                            <p className="text-[10px] sm:text-xs font-semibold text-gray-700 mb-1">Account Name</p>
-                            <p className="text-xs sm:text-sm bg-white p-1.5 sm:p-2 rounded font-semibold">{paymentDetails.accountName}</p>
-                          </div>
-                        )}
+                          )}
 
-                        {paymentDetails.whatsappNumber && (
-                          <div>
-                            <p className="text-[10px] sm:text-xs font-semibold text-gray-700 mb-1">Send Payment Proof</p>
-                            <a
-                              href={`https://wa.me/${paymentDetails.whatsappNumber.replace(/\D/g, '')}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1.5 sm:gap-2 bg-green-500 hover:bg-green-600 text-white p-1.5 sm:p-2 rounded text-xs sm:text-sm font-medium transition-colors"
-                            >
-                              <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                              <span>WhatsApp: {paymentDetails.whatsappNumber}</span>
-                            </a>
-                          </div>
-                        )}
+                          {/* Account Number */}
+                          {paymentDetails.accountNumber && (
+                            <div>
+                              <p className="text-[10px] sm:text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">Account Number</p>
+                              <div className="flex items-center gap-2 bg-white p-2 sm:p-3 rounded border border-gray-200">
+                                <span className="text-xs sm:text-sm font-mono font-bold text-gray-900 flex-1 break-all">{paymentDetails.accountNumber}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(paymentDetails.accountNumber || '');
+                                    setCopiedField('account');
+                                    setTimeout(() => setCopiedField(null), 2000);
+                                  }}
+                                  className="flex-shrink-0 p-1.5 hover:bg-gray-100 rounded transition-colors"
+                                  title="Copy account number"
+                                >
+                                  <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600" />
+                                </button>
+                              </div>
+                              {copiedField === 'account' && <p className="text-[10px] sm:text-xs text-green-600 font-medium">✓ Copied!</p>}
+                            </div>
+                          )}
+                          
+                          {/* Account Name */}
+                          {paymentDetails.accountName && (
+                            <div>
+                              <p className="text-[10px] sm:text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">Account Holder Name</p>
+                              <p className="text-xs sm:text-sm bg-white p-2 sm:p-3 rounded font-bold text-gray-900">{paymentDetails.accountName}</p>
+                            </div>
+                          )}
+
+                          {/* WhatsApp Contact */}
+                          {paymentDetails.whatsappNumber && (
+                            <div>
+                              <p className="text-[10px] sm:text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">Send Payment Proof</p>
+                              <a
+                                href={`https://wa.me/${paymentDetails.whatsappNumber.replace(/\D/g, '')}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white p-2 sm:p-3 rounded font-medium text-xs sm:text-sm transition-colors w-full"
+                              >
+                                <MessageCircle className="w-4 h-4" />
+                                <span>WhatsApp: {paymentDetails.whatsappNumber}</span>
+                              </a>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </CardContent>

@@ -11,6 +11,7 @@ interface Settings {
   whatsappNumber?: string;
   bankAccountNumber?: string;
   bankAccountName?: string;
+  bankName?: string;
   openingHours?: string;
 }
 
@@ -20,6 +21,7 @@ export default function SettingsPage() {
     whatsappNumber: '',
     bankAccountNumber: '',
     bankAccountName: '',
+    bankName: '',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -123,6 +125,14 @@ export default function SettingsPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium">Bank Name</label>
+              <Input
+                value={settings.bankName || ''}
+                onChange={(e) => setSettings({ ...settings, bankName: e.target.value })}
+                placeholder="e.g., First Bank, GTBank, Access Bank"
+              />
+            </div>
             <div>
               <label className="text-sm font-medium">Bank Account Number</label>
               <Input

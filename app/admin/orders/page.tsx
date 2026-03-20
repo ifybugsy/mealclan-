@@ -159,33 +159,56 @@ export default function OrdersPage() {
 
               {/* Order Content - Better Organization */}
               <CardContent className="pt-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  {/* Customer Information */}
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <p className="text-sm font-bold text-gray-900 mb-3 flex items-center">
+                      <span className="w-5 h-5 bg-indigo-600 text-white rounded-full text-xs flex items-center justify-center mr-2">👤</span>
+                      Customer Info
+                    </p>
+                    <div className="space-y-2 text-xs sm:text-sm">
+                      <div className="bg-white p-2 rounded">
+                        <p className="text-gray-600 text-[10px]">Phone</p>
+                        <p className="font-semibold text-gray-900">{order.customerPhone}</p>
+                      </div>
+                      {order.customerEmail && (
+                        <div className="bg-white p-2 rounded">
+                          <p className="text-gray-600 text-[10px]">Email</p>
+                          <p className="font-semibold text-gray-900 truncate">{order.customerEmail}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Items Section */}
-                  <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
                     <p className="text-sm font-bold text-gray-900 mb-3 flex items-center">
                       <span className="w-5 h-5 bg-blue-600 text-white rounded-full text-xs flex items-center justify-center mr-2">{order.items.length}</span>
                       Items Ordered
                     </p>
                     <ul className="space-y-2">
                       {order.items.map((item, idx) => (
-                        <li key={idx} className="text-sm text-gray-700 flex justify-between">
-                          <span><span className="font-medium">{item.quantity}x</span> {item.name}</span>
-                          <span className="font-medium text-gray-900">₦{item.price.toLocaleString()}</span>
+                        <li key={idx} className="text-xs sm:text-sm text-gray-700 flex justify-between gap-2 bg-white p-2 rounded">
+                          <span><span className="font-medium text-blue-600">{item.quantity}x</span> {item.name}</span>
+                          <span className="font-semibold text-gray-900">₦{item.price.toLocaleString()}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
 
                   {/* Delivery & Instructions Section */}
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {order.deliveryType && (
-                      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                        <p className="text-xs font-bold text-blue-900 uppercase tracking-wide mb-2">Delivery Type</p>
-                        <p className="text-sm text-blue-900 font-medium capitalize">
+                      <div className={`rounded-lg p-4 border ${order.deliveryType === 'delivery' ? 'bg-orange-50 border-orange-200' : 'bg-green-50 border-green-200'}`}>
+                        <p className={`text-xs font-bold uppercase tracking-wide mb-2 ${order.deliveryType === 'delivery' ? 'text-orange-900' : 'text-green-900'}`}>Delivery Type</p>
+                        <p className={`text-sm font-bold ${order.deliveryType === 'delivery' ? 'text-orange-900' : 'text-green-900'}`}>
                           {order.deliveryType === 'delivery' ? '🚗 Delivery' : '🏪 Pickup'}
                         </p>
                         {order.deliveryType === 'delivery' && order.deliveryAddress && (
-                          <p className="text-xs text-blue-800 mt-2">📍 {order.deliveryAddress}</p>
+                          <div className={`text-xs mt-3 p-2 rounded bg-white border-l-2 ${order.deliveryType === 'delivery' ? 'border-orange-500' : 'border-green-500'}`}>
+                            <p className="text-gray-600 text-[10px] font-semibold mb-1">📍 Delivery Address</p>
+                            <p className="text-gray-900 font-medium break-words">{order.deliveryAddress}</p>
+                          </div>
                         )}
                       </div>
                     )}
@@ -193,7 +216,7 @@ export default function OrdersPage() {
                     {order.specialInstructions && (
                       <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
                         <p className="text-xs font-bold text-amber-900 uppercase tracking-wide mb-2">⚠️ Special Instructions</p>
-                        <p className="text-sm text-amber-900">{order.specialInstructions}</p>
+                        <p className="text-sm text-amber-900 break-words">{order.specialInstructions}</p>
                       </div>
                     )}
                   </div>

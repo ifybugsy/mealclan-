@@ -50,7 +50,9 @@ export interface AdminSettings {
   _id?: ObjectId;
   restaurantName: string;
   whatsappNumber: string;
-  bankDetails?: string;
+  bankAccountNumber?: string;
+  bankAccountName?: string;
+  bankName?: string;
   openingHours?: string;
   updatedAt: Date;
 }

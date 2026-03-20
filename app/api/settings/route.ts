@@ -48,3 +48,26 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 });
   }
 }
+
+export async function PUT(request: NextRequest) {
+  try {
+    const { db } = await connectToDatabase();
+    const body = await request.json();
+
+    const result = await db.collection('settings').updateOne(
+      {},
+      {
+        $set: {
+          ...body,
+          updatedAt: new Date(),
+        },
+      },
+      { upsert: true }
+    );
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error updating settings:', error);
+    return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 });
+  }
+}
