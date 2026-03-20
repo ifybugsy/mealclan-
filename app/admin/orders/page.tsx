@@ -42,6 +42,27 @@ export default function OrdersPage() {
   const { orders: realTimeOrders, isConnected } = useRealTimeOrders();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+
+  // Auto-refresh every 1 minute
+  useEffect(() => {
+    const refreshInterval = setInterval(async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+        const response = await fetch(`${apiUrl}/orders`);
+        if (response.ok) {
+          const data = await response.json();
+          setOrders(data);
+          setLastRefresh(new Date());
+        }
+      } catch (error) {
+        console.error('[v0] Auto-refresh failed:', error);
+      }
+    }, 60000); // 60000ms = 1 minute
+
+    return () => clearInterval(refreshInterval);
+  }, []);
 
   // Fallback direct API fetch if socket doesn't provide data
   useEffect(() => {
@@ -118,26 +139,43 @@ export default function OrdersPage() {
         <p className="text-sm sm:text-base text-gray-600">Manage and track customer orders</p>
       </div>
 
-      <div className="flex gap-1 sm:gap-2 flex-wrap">
-        <Button
-          variant={!filterStatus ? 'default' : 'outline'}
-          onClick={() => setFilterStatus('')}
-          size="sm"
-          className="text-xs sm:text-sm"
-        >
-          All
-        </Button>
-        {statuses.map((status) => (
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+        <div className="flex gap-1 sm:gap-2 flex-wrap">
           <Button
-            key={status}
-            variant={filterStatus === status ? 'default' : 'outline'}
-            onClick={() => setFilterStatus(status)}
-            className="capitalize text-xs sm:text-sm"
+            variant={!filterStatus ? 'default' : 'outline'}
+            onClick={() => setFilterStatus('')}
             size="sm"
+            className="text-xs sm:text-sm"
           >
-            {status.slice(0, 3)}
+            All
           </Button>
-        ))}
+          {statuses.map((status) => (
+            <Button
+              key={status}
+              variant={filterStatus === status ? 'default' : 'outline'}
+              onClick={() => setFilterStatus(status)}
+              className="capitalize text-xs sm:text-sm"
+              size="sm"
+            >
+              {status.slice(0, 3)}
+            </Button>
+          ))}
+        </div>
+        
+        {/* Status and Refresh Info */}
+        <div className="flex flex-col gap-1 text-right">
+          <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium w-fit ${
+            isConnected 
+              ? 'bg-green-100 text-green-800' 
+              : 'bg-yellow-100 text-yellow-800'
+          }`}>
+            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-600' : 'bg-yellow-600'}`}></div>
+            {isConnected ? 'Live' : 'Syncing'}
+          </div>
+          <div className="text-[10px] text-gray-500">
+            Refreshes every 1 min
+          </div>
+        </div>
       </div>
 
       <div className="space-y-4">
@@ -211,8 +249,8 @@ export default function OrdersPage() {
                         </div>
                       )}
                       
-                      {/* Delivery Address - Prominent Display */}
-                      {order.deliveryAddress ? (
+                      {/* Delivery Address - Show actual address or nothing */}
+                      {order.deliveryAddress && order.deliveryType === 'delivery' ? (
                         <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-3 rounded-lg border-2 border-orange-300 shadow-md">
                           <p className="text-orange-900 text-[10px] font-bold mb-2 uppercase tracking-wide flex items-center">
                             <span className="text-lg mr-1.5">📍</span>
@@ -225,51 +263,64 @@ export default function OrdersPage() {
                       ) : (
                         <div className="bg-gray-100 p-3 rounded-lg border border-gray-300">
                           <p className="text-gray-600 text-[10px] font-semibold mb-1 uppercase">Delivery Address</p>
-                          <p className="text-gray-500 text-xs italic">No delivery address provided (Pickup order)</p>
+                          <p className="text-gray-500 text-xs italic">Pickup order - No delivery address</p>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  {/* Items Section */}
+                  {/* Items Section - Expandable */}
                   <div className="bg-blue-50 rounded-lg p-4 border-2 border-blue-300 shadow-md">
-                    <div className="flex items-center justify-between mb-4">
-                      <p className="text-sm font-bold text-gray-900 flex items-center">
-                        <span className="w-6 h-6 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-full text-xs font-bold flex items-center justify-center mr-2 shadow-md">{order.items.length}</span>
-                        Items Ordered
-                      </p>
-                      <span className="bg-blue-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full">
-                        {order.items.reduce((sum, item) => sum + item.quantity, 0)} TOTAL ITEMS
-                      </span>
-                    </div>
-                    <ul className="space-y-3">
-                      {order.items.map((item, idx) => (
-                        <li key={idx} className="text-xs sm:text-sm bg-white p-3 rounded border border-blue-100 hover:shadow-sm transition-shadow">
-                          {/* Item Name and Price */}
-                          <div className="flex justify-between gap-2 mb-2">
-                            <span className="font-semibold">
-                              <span className="inline-block bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-[10px] mr-1.5 font-bold">{item.quantity}</span>
-                              <span className="text-gray-900">{item.name}</span>
-                            </span>
-                            <span className="font-bold text-blue-600">₦{item.price.toLocaleString()}</span>
-                          </div>
-                          
-                          {/* Soup Options - Always show if available */}
-                          {(item as any).soupOptions && (item as any).soupOptions.length > 0 ? (
-                            <div className="mt-2 pt-2 border-t border-amber-200">
-                              <p className="text-[10px] font-bold text-amber-700 mb-1.5 uppercase tracking-wide">Served with:</p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {(item as any).soupOptions.map((option: string) => (
-                                  <span key={option} className="inline-flex items-center bg-gradient-to-r from-amber-100 to-orange-100 text-amber-900 text-[11px] font-bold px-3 py-1.5 rounded-full border border-amber-400 shadow-sm">
-                                    {option}
-                                  </span>
-                                ))}
-                              </div>
+                    <button
+                      onClick={() => setExpandedItems(prev => ({ ...prev, [order._id]: !prev[order._id] }))}
+                      className="w-full text-left hover:opacity-80 transition-opacity"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-bold text-gray-900 flex items-center">
+                          <span className="w-6 h-6 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-full text-xs font-bold flex items-center justify-center mr-2 shadow-md">{order.items.length}</span>
+                          Items Ordered
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <span className="bg-blue-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full">
+                            {order.items.reduce((sum, item) => sum + item.quantity, 0)} TOTAL ITEMS
+                          </span>
+                          <span className={`text-2xl transition-transform ${expandedItems[order._id] ? 'rotate-180' : ''}`}>
+                            ▼
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                    
+                    {expandedItems[order._id] && (
+                      <ul className="space-y-3 mt-4 pt-4 border-t border-blue-200">
+                        {order.items.map((item, idx) => (
+                          <li key={idx} className="text-xs sm:text-sm bg-white p-3 rounded border border-blue-100 hover:shadow-sm transition-shadow">
+                            {/* Item Name and Price */}
+                            <div className="flex justify-between gap-2 mb-2">
+                              <span className="font-semibold">
+                                <span className="inline-block bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-[10px] mr-1.5 font-bold">{item.quantity}</span>
+                                <span className="text-gray-900">{item.name}</span>
+                              </span>
+                              <span className="font-bold text-blue-600">₦{item.price.toLocaleString()}</span>
                             </div>
-                          ) : null}
-                        </li>
-                      ))}
-                    </ul>
+                            
+                            {/* Soup Options - Show if available */}
+                            {(item as any).soupOptions && (item as any).soupOptions.length > 0 ? (
+                              <div className="mt-2 pt-2 border-t border-amber-200">
+                                <p className="text-[10px] font-bold text-amber-700 mb-1.5 uppercase tracking-wide">Served with:</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {(item as any).soupOptions.map((option: string) => (
+                                    <span key={option} className="inline-flex items-center bg-gradient-to-r from-amber-100 to-orange-100 text-amber-900 text-[11px] font-bold px-3 py-1.5 rounded-full border border-amber-400 shadow-sm">
+                                      {option}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : null}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
 
                   {/* Delivery & Instructions Section */}
