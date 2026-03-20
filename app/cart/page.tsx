@@ -76,7 +76,7 @@ export default function CartPage() {
         deliveryFee: deliveryFee,
         totalPrice: totalAmount,
         deliveryType: selectedDelivery,
-        deliveryAddress: selectedDelivery === 'delivery' ? formData.deliveryAddress : null,
+        deliveryAddress: formData.deliveryAddress || '',
         specialInstructions: formData.specialInstructions,
         paymentMethod: selectedPayment,
       };

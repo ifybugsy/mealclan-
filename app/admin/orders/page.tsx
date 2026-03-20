@@ -112,6 +112,11 @@ export default function OrdersPage() {
       setOrders(displayOrders);
     }
     setLoading(false);
+    console.log('[v0] Current orders:', displayOrders);
+    if (displayOrders.length > 0) {
+      console.log('[v0] First order delivery address:', displayOrders[0].deliveryAddress);
+      console.log('[v0] First order items:', displayOrders[0].items);
+    }
   }, [realTimeOrders, filterStatus]);
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
@@ -250,18 +255,18 @@ export default function OrdersPage() {
                         </div>
                       )}
                       
-                      {/* Delivery Address - Always show real address if provided */}
-                      {order.deliveryAddress ? (
+                      {/* Delivery Address - Always display if it exists */}
+                      {order.deliveryAddress && order.deliveryAddress.trim() !== '' && (
                         <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-3 rounded-lg border-2 border-orange-300 shadow-md">
                           <p className="text-orange-900 text-[10px] font-bold mb-2 uppercase tracking-wide flex items-center">
                             <span className="text-lg mr-1.5">📍</span>
                             Delivery Address
                           </p>
-                          <p className="font-bold text-gray-900 break-words leading-relaxed bg-white p-2 rounded border-l-4 border-orange-500">
+                          <p className="font-bold text-gray-900 break-words leading-relaxed bg-white p-2 rounded border-l-4 border-orange-500 text-sm">
                             {order.deliveryAddress}
                           </p>
                         </div>
-                      ) : null}
+                      )}
                     </div>
                   </div>
 
@@ -342,40 +347,51 @@ export default function OrdersPage() {
 
         {/* Items Modal Dialog */}
         <Dialog open={!!selectedOrderForItems} onOpenChange={(open) => !open && setSelectedOrderForItems(null)}>
-          <DialogContent className="max-w-2xl max-h-96 overflow-y-auto">
+          <DialogContent className="max-w-3xl max-h-[70vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Order Items - {selectedOrderForItems?.orderNumber}</DialogTitle>
+              <DialogTitle className="text-xl">Order Items - {selectedOrderForItems?.orderNumber}</DialogTitle>
             </DialogHeader>
             
             {selectedOrderForItems && (
-              <div className="space-y-4">
-                <div className="text-sm font-semibold text-gray-700">
-                  Total Items: {selectedOrderForItems.items.reduce((sum, item) => sum + item.quantity, 0)}
+              <div className="space-y-5">
+                {/* Summary */}
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <div className="text-base font-bold text-gray-900">
+                    Total Items Ordered: <span className="text-blue-600">{selectedOrderForItems.items.reduce((sum, item) => sum + item.quantity, 0)}</span>
+                  </div>
                 </div>
                 
-                <ul className="space-y-4">
+                {/* Items List */}
+                <ul className="space-y-5">
                   {selectedOrderForItems.items.map((item, idx) => (
-                    <li key={idx} className="bg-white p-4 rounded border border-blue-200">
-                      {/* Item Header */}
-                      <div className="flex justify-between gap-2 mb-3">
-                        <div>
-                          <span className="inline-block bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm mr-2 font-bold">{item.quantity}</span>
-                          <span className="text-base font-bold text-gray-900">{item.name}</span>
+                    <li key={idx} className="bg-gray-50 p-5 rounded-lg border-2 border-blue-200 shadow-sm">
+                      {/* Item Header with Quantity */}
+                      <div className="flex justify-between items-start gap-3 mb-4">
+                        <div className="flex items-start gap-3">
+                          <span className="inline-block bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center text-lg font-bold flex-shrink-0">{item.quantity}</span>
+                          <div>
+                            <p className="text-lg font-bold text-gray-900">{item.name}</p>
+                            <p className="text-sm text-gray-600">₦{item.price.toLocaleString()} each</p>
+                          </div>
                         </div>
-                        <span className="font-bold text-blue-600 text-base">₦{item.price.toLocaleString()}</span>
+                        <span className="font-bold text-blue-600 text-lg">₦{(item.price * item.quantity).toLocaleString()}</span>
                       </div>
                       
-                      {/* Soup Options */}
-                      {(item as any).soupOptions && (item as any).soupOptions.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-amber-200">
-                          <p className="text-xs font-bold text-amber-700 mb-2 uppercase tracking-wide">Served with:</p>
-                          <div className="flex flex-wrap gap-2">
+                      {/* Soup Options - Always visible and prominent */}
+                      {(item as any).soupOptions && (item as any).soupOptions.length > 0 ? (
+                        <div className="mt-4 pt-4 border-t-2 border-amber-300 bg-amber-50 p-4 rounded-lg">
+                          <p className="text-sm font-bold text-amber-800 mb-3 uppercase tracking-wider">Selected Options:</p>
+                          <div className="flex flex-wrap gap-3">
                             {(item as any).soupOptions.map((option: string) => (
-                              <span key={option} className="inline-flex items-center bg-gradient-to-r from-amber-100 to-orange-100 text-amber-900 text-sm font-bold px-4 py-2 rounded-full border-2 border-amber-400 shadow-sm">
-                                {option}
+                              <span key={option} className="inline-flex items-center bg-gradient-to-r from-amber-200 to-orange-200 text-amber-900 text-base font-bold px-5 py-2.5 rounded-full border-2 border-amber-500 shadow-md hover:shadow-lg transition-shadow">
+                                ✓ {option}
                               </span>
                             ))}
                           </div>
+                        </div>
+                      ) : (
+                        <div className="mt-4 pt-4 border-t border-gray-300 text-gray-500 text-sm italic">
+                          No options selected
                         </div>
                       )}
                     </li>
