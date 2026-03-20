@@ -10,6 +10,7 @@ export interface CartItem {
   image?: string;
   description?: string;
   category?: string;
+  soupOptions?: string[]; // For soup items: 'Garri', 'Fufu', 'Semo'
 }
 
 interface CartContextType {
@@ -41,26 +42,67 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addToCart = (item: CartItem) => {
     setCart((prev) => {
-      const existing = prev.find((c) => c._id === item._id);
-      if (existing) {
-        return prev.map((c) =>
-          c._id === item._id ? { ...c, quantity: c.quantity + item.quantity } : c
-        );
+      // For soup items with options, treat each combination as unique
+      const existingIndex = prev.findIndex((c) => {
+        if (c._id === item._id) {
+          // If both have soup options, compare them
+          if (item.soupOptions && c.soupOptions) {
+            const itemOptions = [...(item.soupOptions || [])].sort();
+            const cartOptions = [...(c.soupOptions || [])].sort();
+            return JSON.stringify(itemOptions) === JSON.stringify(cartOptions);
+          }
+          // If neither has soup options or both don't match
+          return !item.soupOptions && !c.soupOptions;
+        }
+        return false;
+      });
+
+      if (existingIndex >= 0) {
+        const updated = [...prev];
+        updated[existingIndex].quantity += item.quantity;
+        return updated;
       }
       return [...prev, item];
     });
   };
 
-  const removeFromCart = (itemId: string) => {
-    setCart((prev) => prev.filter((c) => c._id !== itemId));
+  const removeFromCart = (itemId: string, soupOptions?: string[]) => {
+    setCart((prev) => 
+      prev.filter((c) => {
+        if (c._id !== itemId) return true;
+        
+        // If soup options provided, only remove exact match
+        if (soupOptions) {
+          const cartOptions = c.soupOptions ? [...c.soupOptions].sort() : [];
+          const removeOptions = [...soupOptions].sort();
+          return JSON.stringify(cartOptions) !== JSON.stringify(removeOptions);
+        }
+        
+        return false;
+      })
+    );
   };
 
-  const updateQuantity = (itemId: string, quantity: number) => {
+  const updateQuantity = (itemId: string, quantity: number, soupOptions?: string[]) => {
     if (quantity <= 0) {
-      removeFromCart(itemId);
+      removeFromCart(itemId, soupOptions);
     } else {
       setCart((prev) =>
-        prev.map((c) => (c._id === itemId ? { ...c, quantity } : c))
+        prev.map((c) => {
+          if (c._id === itemId) {
+            // If soup options provided, only update exact match
+            if (soupOptions) {
+              const cartOptions = c.soupOptions ? [...c.soupOptions].sort() : [];
+              const updateOptions = [...soupOptions].sort();
+              if (JSON.stringify(cartOptions) === JSON.stringify(updateOptions)) {
+                return { ...c, quantity };
+              }
+            } else if (!soupOptions && !c.soupOptions) {
+              return { ...c, quantity };
+            }
+          }
+          return c;
+        })
       );
     }
   };

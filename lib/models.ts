@@ -18,6 +18,7 @@ export interface OrderItem {
   name: string;
   price: number;
   quantity: number;
+  soupOptions?: string[]; // For soup items: 'Garri', 'Fufu', 'Semo'
 }
 
 export interface Order {

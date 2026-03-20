@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Minus, ShoppingCart, Zap } from 'lucide-react';
 
 interface MenuItem {
@@ -22,8 +23,8 @@ interface ItemDetailModalProps {
   item: MenuItem | null;
   isOpen: boolean;
   onClose: () => void;
-  onAddToCart: (quantity: number) => void;
-  onCheckout: (quantity: number) => void;
+  onAddToCart: (quantity: number, soupOptions?: string[]) => void;
+  onCheckout: (quantity: number, soupOptions?: string[]) => void;
 }
 
 export function ItemDetailModal({
@@ -34,6 +35,8 @@ export function ItemDetailModal({
   onCheckout,
 }: ItemDetailModalProps) {
   const [quantity, setQuantity] = useState(1);
+  const [soupOptions, setSoupOptions] = useState<string[]>([]);
+  const SOUP_OPTIONS = ['Garri', 'Fufu', 'Semo'];
 
   if (!item) return null;
 
@@ -42,15 +45,27 @@ export function ItemDetailModal({
     setQuantity(newQuantity);
   };
 
+  const handleSoupOptionChange = (option: string) => {
+    setSoupOptions((prev) =>
+      prev.includes(option)
+        ? prev.filter((o) => o !== option)
+        : [...prev, option]
+    );
+  };
+
   const handleAddToCart = () => {
-    onAddToCart(quantity);
+    const options = item.category === 'Soup' && soupOptions.length > 0 ? soupOptions : undefined;
+    onAddToCart(quantity, options);
     setQuantity(1);
+    setSoupOptions([]);
     onClose();
   };
 
   const handleCheckout = () => {
-    onCheckout(quantity);
+    const options = item.category === 'Soup' && soupOptions.length > 0 ? soupOptions : undefined;
+    onCheckout(quantity, options);
     setQuantity(1);
+    setSoupOptions([]);
     onClose();
   };
 
@@ -119,6 +134,28 @@ export function ItemDetailModal({
                     : 'Available - Fresh and ready to serve'}
                 </p>
               </div>
+
+              {/* Soup Options */}
+              {item.category === 'Soup' && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+                  <p className="text-sm font-semibold text-amber-900 mb-3">What would you like with your soup?</p>
+                  <div className="space-y-2">
+                    {SOUP_OPTIONS.map((option) => (
+                      <div key={option} className="flex items-center gap-3">
+                        <Checkbox
+                          id={`soup-${option}`}
+                          checked={soupOptions.includes(option)}
+                          onCheckedChange={() => handleSoupOptionChange(option)}
+                          className="w-4 h-4 cursor-pointer"
+                        />
+                        <label htmlFor={`soup-${option}`} className="text-sm font-medium text-amber-900 cursor-pointer flex-1">
+                          {option}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Action Section */}

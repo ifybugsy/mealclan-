@@ -126,15 +126,23 @@ export function MenuStore({ onAddToCart }: MenuStoreProps) {
     setIsModalOpen(true);
   };
 
-  const handleAddToCart = (quantity: number) => {
+  const handleAddToCart = (quantity: number, soupOptions?: string[]) => {
     if (selectedItem) {
-      onAddToCart({ ...selectedItem, quantity });
+      const cartItem = { ...selectedItem, quantity };
+      if (soupOptions && soupOptions.length > 0) {
+        (cartItem as any).soupOptions = soupOptions;
+      }
+      onAddToCart(cartItem);
     }
   };
 
-  const handleCheckout = (quantity: number) => {
+  const handleCheckout = (quantity: number, soupOptions?: string[]) => {
     if (selectedItem) {
-      onAddToCart({ ...selectedItem, quantity });
+      const cartItem = { ...selectedItem, quantity };
+      if (soupOptions && soupOptions.length > 0) {
+        (cartItem as any).soupOptions = soupOptions;
+      }
+      onAddToCart(cartItem);
       router.push('/cart');
     }
   };

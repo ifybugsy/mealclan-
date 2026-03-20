@@ -195,6 +195,11 @@ export default function CartPage() {
                         <h3 className="font-bold text-sm sm:text-base text-gray-900 line-clamp-2">
                           {item.name}
                         </h3>
+                        {(item as any).soupOptions && (item as any).soupOptions.length > 0 && (
+                          <p className="text-xs text-amber-700 font-medium mt-1 bg-amber-50 px-2 py-1 rounded w-fit">
+                            With: {(item as any).soupOptions.join(', ')}
+                          </p>
+                        )}
                         <p className="text-sm text-gray-600 mt-1">₦{item.price.toLocaleString()} each</p>
                         <p className="text-xs sm:text-sm text-blue-600 font-semibold mt-2">
                           Subtotal: ₦{(item.price * item.quantity).toLocaleString()}
@@ -209,7 +214,7 @@ export default function CartPage() {
                             size="sm"
                             variant="ghost"
                             onClick={() =>
-                              updateQuantity(item._id, Math.max(1, item.quantity - 1))
+                              updateQuantity(item._id, Math.max(1, item.quantity - 1), (item as any).soupOptions)
                             }
                             className="h-7 w-7 p-0"
                           >
@@ -221,7 +226,7 @@ export default function CartPage() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => updateQuantity(item._id, item.quantity + 1)}
+                            onClick={() => updateQuantity(item._id, item.quantity + 1, (item as any).soupOptions)}
                             className="h-7 w-7 p-0"
                           >
                             <Plus className="w-3.5 h-3.5" />
@@ -232,7 +237,7 @@ export default function CartPage() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => removeFromCart(item._id)}
+                          onClick={() => removeFromCart(item._id, (item as any).soupOptions)}
                           className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8"
                         >
                           <Trash2 className="w-4 h-4 mr-1" />
