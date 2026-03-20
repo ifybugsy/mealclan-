@@ -43,6 +43,29 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Fallback direct API fetch if socket doesn't provide data
+  useEffect(() => {
+    const fetchOrdersDirectly = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+        const response = await fetch(`${apiUrl}/orders`);
+        if (response.ok) {
+          const data = await response.json();
+          console.log('[v0] Direct fetch orders:', data);
+          if (data && data.length > 0 && realTimeOrders.length === 0) {
+            setOrders(data);
+          }
+        }
+      } catch (error) {
+        console.error('[v0] Direct fetch failed:', error);
+      }
+    };
+
+    if (!isConnected || realTimeOrders.length === 0) {
+      fetchOrdersDirectly();
+    }
+  }, [isConnected, realTimeOrders]);
+
   useEffect(() => {
     console.log('[OrdersPage] Socket connected status:', isConnected);
     if (isConnected) {
@@ -56,13 +79,15 @@ export default function OrdersPage() {
     };
   }, [isConnected]);
 
+  // Filter orders based on status selection
   useEffect(() => {
-    // Filter orders based on selected status
+    const displayOrders = orders.length > 0 ? orders : realTimeOrders;
+    
     if (filterStatus) {
-      const filtered = realTimeOrders.filter((order: Order) => order.status === filterStatus);
+      const filtered = displayOrders.filter((order: Order) => order.status === filterStatus);
       setOrders(filtered);
     } else {
-      setOrders(realTimeOrders);
+      setOrders(displayOrders);
     }
     setLoading(false);
   }, [realTimeOrders, filterStatus]);
@@ -187,7 +212,7 @@ export default function OrdersPage() {
                       )}
                       
                       {/* Delivery Address - Prominent Display */}
-                      {order.deliveryAddress && (
+                      {order.deliveryAddress ? (
                         <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-3 rounded-lg border-2 border-orange-300 shadow-md">
                           <p className="text-orange-900 text-[10px] font-bold mb-2 uppercase tracking-wide flex items-center">
                             <span className="text-lg mr-1.5">📍</span>
@@ -196,6 +221,11 @@ export default function OrdersPage() {
                           <p className="font-bold text-gray-900 break-words leading-relaxed bg-white p-2 rounded border-l-4 border-orange-500">
                             {order.deliveryAddress}
                           </p>
+                        </div>
+                      ) : (
+                        <div className="bg-gray-100 p-3 rounded-lg border border-gray-300">
+                          <p className="text-gray-600 text-[10px] font-semibold mb-1 uppercase">Delivery Address</p>
+                          <p className="text-gray-500 text-xs italic">No delivery address provided (Pickup order)</p>
                         </div>
                       )}
                     </div>
@@ -220,7 +250,7 @@ export default function OrdersPage() {
                           </div>
                           
                           {/* Soup Options - Always show if available */}
-                          {(item as any).soupOptions && (item as any).soupOptions.length > 0 && (
+                          {(item as any).soupOptions && (item as any).soupOptions.length > 0 ? (
                             <div className="mt-2 pt-2 border-t border-amber-200">
                               <p className="text-[10px] font-bold text-amber-700 mb-1.5 uppercase tracking-wide">Served with:</p>
                               <div className="flex flex-wrap gap-1.5">
@@ -231,7 +261,7 @@ export default function OrdersPage() {
                                 ))}
                               </div>
                             </div>
-                          )}
+                          ) : null}
                         </li>
                       ))}
                     </ul>
