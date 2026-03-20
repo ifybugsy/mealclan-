@@ -17,7 +17,12 @@ interface Order {
   status: string;
   paymentStatus: string;
   createdAt: string;
-  items: Array<{ name: string; quantity: number; price: number }>;
+  items: Array<{ 
+    name: string; 
+    quantity: number; 
+    price: number;
+    soupOptions?: string[];
+  }>;
   specialInstructions?: string;
   deliveryType?: string;
   deliveryAddress?: string;
@@ -166,21 +171,31 @@ export default function OrdersPage() {
                       <span className="w-5 h-5 bg-indigo-600 text-white rounded-full text-xs flex items-center justify-center mr-2">👤</span>
                       Customer Info
                     </p>
-                    <div className="space-y-2 text-xs sm:text-sm">
-                      <div className="bg-white p-2 rounded">
-                        <p className="text-gray-600 text-[10px]">Phone</p>
-                        <p className="font-semibold text-gray-900">{order.customerPhone}</p>
+                    <div className="space-y-2.5 text-xs sm:text-sm">
+                      {/* Phone */}
+                      <div className="bg-white p-2.5 rounded border border-gray-100">
+                        <p className="text-gray-500 text-[10px] font-semibold mb-1 uppercase">Phone</p>
+                        <p className="font-bold text-gray-900">{order.customerPhone}</p>
                       </div>
+                      
+                      {/* Email */}
                       {order.customerEmail && (
-                        <div className="bg-white p-2 rounded">
-                          <p className="text-gray-600 text-[10px]">Email</p>
+                        <div className="bg-white p-2.5 rounded border border-gray-100">
+                          <p className="text-gray-500 text-[10px] font-semibold mb-1 uppercase">Email</p>
                           <p className="font-semibold text-gray-900 truncate">{order.customerEmail}</p>
                         </div>
                       )}
+                      
+                      {/* Delivery Address - Prominent Display */}
                       {order.deliveryAddress && (
-                        <div className="bg-white p-2 rounded border border-orange-200 bg-orange-50">
-                          <p className="text-gray-600 text-[10px] font-semibold mb-1">📍 Delivery Address</p>
-                          <p className="font-semibold text-gray-900 break-words leading-relaxed">{order.deliveryAddress}</p>
+                        <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-3 rounded-lg border-2 border-orange-300 shadow-md">
+                          <p className="text-orange-900 text-[10px] font-bold mb-2 uppercase tracking-wide flex items-center">
+                            <span className="text-lg mr-1.5">📍</span>
+                            Delivery Address
+                          </p>
+                          <p className="font-bold text-gray-900 break-words leading-relaxed bg-white p-2 rounded border-l-4 border-orange-500">
+                            {order.deliveryAddress}
+                          </p>
                         </div>
                       )}
                     </div>
@@ -192,21 +207,29 @@ export default function OrdersPage() {
                       <span className="w-5 h-5 bg-blue-600 text-white rounded-full text-xs flex items-center justify-center mr-2">{order.items.length}</span>
                       Items Ordered
                     </p>
-                    <ul className="space-y-2">
+                    <ul className="space-y-3">
                       {order.items.map((item, idx) => (
-                        <li key={idx} className="text-xs sm:text-sm text-gray-700 bg-white p-2 rounded">
-                          <div className="flex justify-between gap-2 mb-1">
-                            <span><span className="font-medium text-blue-600">{item.quantity}x</span> {item.name}</span>
-                            <span className="font-semibold text-gray-900">₦{item.price.toLocaleString()}</span>
+                        <li key={idx} className="text-xs sm:text-sm bg-white p-3 rounded border border-blue-100">
+                          {/* Item Name and Price */}
+                          <div className="flex justify-between gap-2 mb-2">
+                            <span className="font-semibold">
+                              <span className="inline-block bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-[10px] mr-1.5">{item.quantity}</span>
+                              <span className="text-gray-900">{item.name}</span>
+                            </span>
+                            <span className="font-bold text-blue-600">₦{item.price.toLocaleString()}</span>
                           </div>
+                          
+                          {/* Soup Options - Always show if available */}
                           {(item as any).soupOptions && (item as any).soupOptions.length > 0 && (
-                            <div className="ml-1 mt-2 flex flex-wrap gap-1">
-                              <span className="text-[10px] font-semibold text-amber-700">With:</span>
-                              {(item as any).soupOptions.map((option: string) => (
-                                <span key={option} className="inline-block bg-amber-100 text-amber-800 text-[10px] font-bold px-2.5 py-1 rounded border border-amber-300">
-                                  {option}
-                                </span>
-                              ))}
+                            <div className="mt-2 pt-2 border-t border-amber-200">
+                              <p className="text-[10px] font-bold text-amber-700 mb-1.5 uppercase tracking-wide">Served with:</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {(item as any).soupOptions.map((option: string) => (
+                                  <span key={option} className="inline-flex items-center bg-gradient-to-r from-amber-100 to-orange-100 text-amber-900 text-[11px] font-bold px-3 py-1.5 rounded-full border border-amber-400 shadow-sm">
+                                    {option}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
                           )}
                         </li>
