@@ -43,6 +43,10 @@ export default function OrderConfirmationPage() {
         const orderRes = await fetch(`${apiUrl}/orders/${orderId}`);
         const orderData = await orderRes.json();
 
+        console.log('[v0] Confirmation - Fetched order data:', orderData);
+        console.log('[v0] Confirmation - Delivery address:', orderData.deliveryAddress);
+        console.log('[v0] Confirmation - Delivery type:', orderData.deliveryType);
+
         setOrder(orderData);
         // Set default settings with hardcoded WhatsApp number
         setSettings({
@@ -188,9 +192,12 @@ export default function OrderConfirmationPage() {
               </ul>
             </div>
 
-            {order.deliveryType === 'delivery' && order.deliveryAddress && (
+            {order.deliveryAddress && (
               <div className="border-t pt-2 sm:pt-4 mt-2 sm:mt-4">
-                <p className="text-xs sm:text-sm font-semibold mb-2">📍 Delivery Address:</p>
+                <p className="text-xs sm:text-sm font-semibold mb-2 flex items-center gap-2">
+                  <span>📍 Delivery Address</span>
+                  <span className="text-[10px] text-gray-500">({order.deliveryType})</span>
+                </p>
                 <div className="bg-blue-50 p-2 sm:p-3 rounded border border-blue-200">
                   <p className="text-[10px] sm:text-xs md:text-sm text-gray-800 break-words">{order.deliveryAddress}</p>
                 </div>

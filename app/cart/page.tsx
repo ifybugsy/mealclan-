@@ -122,12 +122,20 @@ export default function CartPage() {
         paymentMethod: selectedPayment,
       };
 
+      console.log('[v0] Cart - Order data being sent:', {
+        deliveryType: selectedDelivery,
+        deliveryAddress: formData.deliveryAddress,
+        customerPhone: formData.customerPhone,
+      });
+
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
       const response = await fetch(`${apiUrl}/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData),
       });
+
+      console.log('[v0] Cart - API response status:', response.status);
 
       if (response.ok) {
         const order = await response.json();
