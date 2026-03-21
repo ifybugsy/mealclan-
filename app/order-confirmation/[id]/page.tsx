@@ -46,11 +46,16 @@ export default function OrderConfirmationPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!orderId) return;
+      if (!orderId) {
+        setError('Order ID not found');
+        setLoading(false);
+        return;
+      }
 
       try {
         const [orderRes, settingsRes] = await Promise.all([
@@ -58,8 +63,19 @@ export default function OrderConfirmationPage() {
           fetch('/api/settings')
         ]);
 
+        if (!orderRes.ok) {
+          throw new Error('Failed to fetch order details');
+        }
+
         const orderData = await orderRes.json();
-        const settingsData = await settingsRes.json();
+        
+        if (!orderData || !orderData._id) {
+          setError('Order data is invalid');
+          setLoading(false);
+          return;
+        }
+
+        const settingsData = settingsRes.ok ? await settingsRes.json() : {};
 
         setOrder(orderData);
         setSettings({
@@ -67,8 +83,10 @@ export default function OrderConfirmationPage() {
           bankAccountNumber: settingsData.bankAccountNumber || '',
           bankAccountName: settingsData.bankAccountName || '',
         });
-      } catch (error) {
-        console.error('Failed to fetch data:', error);
+        setError(null);
+      } catch (err) {
+        console.error('Failed to fetch data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load order');
         // Set default settings on error
         setSettings({
           whatsappNumber: '08038753508',
@@ -139,15 +157,23 @@ export default function OrderConfirmationPage() {
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  }
-
-  if (!order) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <Card>
           <CardContent className="py-8 text-center">
-            <p className="text-gray-600">Order not found</p>
+            <p className="text-gray-600">Loading your order...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error || !order) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Card>
+          <CardContent className="py-8 text-center">
+            <p className="text-gray-600 mb-4">{error || 'Order not found'}</p>
             <Link href="/">
               <Button className="mt-4">Go Home</Button>
             </Link>
@@ -268,8 +294,8 @@ export default function OrderConfirmationPage() {
                     </div>
                   )}
                   {settings?.bankAccountNumber && (
-                    <div className="bg-white p-2 sm:p-3 rounded border border-blue-200 flex items-center gap-2">
-                      <p className="text-[9px] sm:text-xs font-mono font-bold flex-1">{settings.bankAccountNumber}</p>
+                    <div className="bg-white p-2 sm:p-3 rounded border border-blue-200 flex flex-col sm:flex-row sm:items-center gap-2">
+                      <p className="text-[9px] sm:text-xs font-mono font-bold break-all sm:flex-1">{settings.bankAccountNumber}</p>
                       <button
                         onClick={() => {
                           if (typeof navigator !== 'undefined' && navigator.clipboard) {
@@ -278,7 +304,7 @@ export default function OrderConfirmationPage() {
                             setTimeout(() => setCopied(false), 2000);
                           }
                         }}
-                        className="p-1 hover:bg-gray-100 rounded transition-colors"
+                        className="p-1 hover:bg-gray-100 rounded transition-colors flex-shrink-0"
                       >
                         <Copy className="w-3 h-3 text-blue-600" />
                       </button>
