@@ -12,7 +12,7 @@ interface Order {
   orderNumber: string;
   customerName: string;
   customerPhone: string;
-  items: Array<{ name: string; quantity: number; price: number }>;
+  items: Array<{ name: string; quantity: number; price: number; soupOptions?: string[] }>;
   totalPrice: number;
   status: string;
   paymentMethod: string;
@@ -68,14 +68,43 @@ export default function OrderConfirmationPage() {
 
   const handleWhatsAppMessage = () => {
     const adminWhatsAppNumber = '08038753508';
-    const message = `Hi, I just placed order ${order?.orderNumber} for ₦${order?.totalPrice}. Please confirm receipt.`;
+    
+    // Build detailed order message
+    const itemsList = order?.items
+      .map((item) => {
+        let itemText = `${item.quantity}x ${item.name} - ₦${(item.price * item.quantity).toLocaleString()}`;
+        if (item.soupOptions && item.soupOptions.length > 0) {
+          itemText += ` (with ${item.soupOptions.join(', ')})`;
+        }
+        return itemText;
+      })
+      .join('\n');
+
+    let message = `*Order Confirmation*\n\n`;
+    message += `Order #: ${order?.orderNumber}\n`;
+    message += `Customer: ${order?.customerName}\n`;
+    message += `Phone: ${order?.customerPhone}\n\n`;
+    message += `*Items:*\n${itemsList}\n\n`;
+    
+    if (order?.deliveryAddress) {
+      message += `*Delivery Address:*\n${order.deliveryAddress}\n\n`;
+    }
+    
+    message += `*Delivery Type:* ${order?.deliveryType}\n`;
+    message += `*Total Amount:* ₦${order?.totalPrice.toLocaleString()}\n`;
+    message += `*Payment Method:* ${order?.paymentMethod}\n\n`;
+    
+    if (order?.specialInstructions) {
+      message += `*Special Instructions:*\n${order.specialInstructions}\n\n`;
+    }
+    
+    message += `Please confirm receipt of this order.`;
+    
     // Convert Nigerian number format to WhatsApp format (234 is Nigeria's country code)
     const whatsappNumber = adminWhatsAppNumber.startsWith('0') 
       ? '234' + adminWhatsAppNumber.slice(1)
       : adminWhatsAppNumber;
-    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-      message
-    )}`;
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
@@ -139,17 +168,43 @@ export default function OrderConfirmationPage() {
 
             <div className="border-t pt-2 sm:pt-4">
               <p className="text-xs sm:text-sm font-semibold mb-1.5 sm:mb-2">Items Ordered:</p>
-              <ul className="space-y-1 sm:space-y-2">
+              <ul className="space-y-2 sm:space-y-3">
                 {order.items.map((item, idx) => (
-                  <li key={idx} className="flex justify-between text-[10px] sm:text-xs md:text-sm">
-                    <span>
-                      {item.quantity}x {item.name}
-                    </span>
-                    <span>₦{(item.price * item.quantity).toLocaleString()}</span>
+                  <li key={idx} className="bg-gray-50 p-2 sm:p-3 rounded border border-gray-200">
+                    <div className="flex justify-between text-[10px] sm:text-xs md:text-sm mb-1">
+                      <span className="font-semibold">
+                        {item.quantity}x {item.name}
+                      </span>
+                      <span className="font-semibold">₦{(item.price * item.quantity).toLocaleString()}</span>
+                    </div>
+                    {item.soupOptions && item.soupOptions.length > 0 && (
+                      <div className="text-[9px] sm:text-[10px] text-gray-600 mt-1 flex flex-wrap gap-1">
+                        <span className="font-medium">Soup Options:</span>
+                        <span className="text-green-700 font-semibold">{item.soupOptions.join(', ')}</span>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
             </div>
+
+            {order.deliveryType === 'delivery' && order.deliveryAddress && (
+              <div className="border-t pt-2 sm:pt-4 mt-2 sm:mt-4">
+                <p className="text-xs sm:text-sm font-semibold mb-2">📍 Delivery Address:</p>
+                <div className="bg-blue-50 p-2 sm:p-3 rounded border border-blue-200">
+                  <p className="text-[10px] sm:text-xs md:text-sm text-gray-800 break-words">{order.deliveryAddress}</p>
+                </div>
+              </div>
+            )}
+
+            {order.specialInstructions && (
+              <div className="border-t pt-2 sm:pt-4 mt-2 sm:mt-4">
+                <p className="text-xs sm:text-sm font-semibold mb-2">Special Instructions:</p>
+                <div className="bg-amber-50 p-2 sm:p-3 rounded border border-amber-200">
+                  <p className="text-[10px] sm:text-xs md:text-sm text-gray-800 break-words">{order.specialInstructions}</p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
