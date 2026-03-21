@@ -67,43 +67,27 @@ export default function CartPage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
 
     // Emit real-time updates to admin dashboard
-    if (socket) {
-      const emitUpdate = () => {
-        if (socket.connected) {
-          console.log(`[v0] Cart page - Emitting ${field} update:`, value);
-          if (field === 'customerPhone') {
-            socket.emit('cartUpdate', { type: 'phone', value });
-          } else if (field === 'deliveryAddress') {
-            // Always emit delivery address when it changes (only shows when delivery is selected anyway)
-            console.log('[v0] Emitting DELIVERY ADDRESS:', value);
-            socket.emit('cartUpdate', { type: 'deliveryAddress', value });
-          }
-        } else {
-          // Retry when connected
-          console.log('[v0] Socket not connected, waiting for connection...');
-          socket.once('connect', emitUpdate);
-        }
-      };
-      emitUpdate();
-    } else {
-      console.log('[v0] Socket not initialized yet');
+    if (!socket) {
+      console.log('[v0] Cart - Socket not initialized');
+      return;
+    }
+
+    // Emit immediately, socket.io handles queuing if not connected
+    if (field === 'customerPhone') {
+      console.log('[v0] Cart - Emitting phone:', value);
+      socket.emit('cartUpdate', { type: 'phone', value });
+    } else if (field === 'deliveryAddress') {
+      console.log('[v0] Cart - Emitting deliveryAddress:', value);
+      socket.emit('cartUpdate', { type: 'deliveryAddress', value });
     }
   };
 
   const handleDeliveryChange = (value: string) => {
     setSelectedDelivery(value);
     
-    // Emit delivery method change to admin
     if (socket) {
-      const emitUpdate = () => {
-        if (socket.connected) {
-          console.log('[v0] Emitting delivery method update:', value);
-          socket.emit('cartUpdate', { type: 'deliveryMethod', value });
-        } else {
-          socket.once('connect', emitUpdate);
-        }
-      };
-      emitUpdate();
+      console.log('[v0] Cart - Emitting delivery method:', value);
+      socket.emit('cartUpdate', { type: 'deliveryMethod', value });
     }
   };
 

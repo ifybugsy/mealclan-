@@ -60,19 +60,12 @@ export function ItemDetailModal({
       
       // Emit soup options update to admin dashboard in real-time
       if (socket) {
-        const emitSoupOptions = () => {
-          if (socket.connected) {
-            console.log('[v0] Emitting soup options update:', updated);
-            socket.emit('cartUpdate', { 
-              type: 'soupOptions',
-              itemName: item?.name,
-              value: updated 
-            });
-          } else {
-            socket.once('connect', emitSoupOptions);
-          }
-        };
-        emitSoupOptions();
+        console.log('[v0] Modal - Emitting soup options:', updated);
+        socket.emit('cartUpdate', { 
+          type: 'soupOptions',
+          itemName: item?.name,
+          value: updated 
+        });
       }
       
       return updated;
