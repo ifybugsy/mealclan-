@@ -304,6 +304,9 @@ export default function OrdersPage() {
                       <Badge variant="outline" className="text-xs">
                         {order.paymentStatus === 'completed' ? '✓ Paid' : '⏳ Pending'}
                       </Badge>
+                      <Badge variant="secondary" className="text-xs">
+                        {order.deliveryType || 'N/A'}
+                      </Badge>
                     </div>
                   </div>
 
@@ -390,19 +393,27 @@ export default function OrdersPage() {
                   {/* Delivery & Instructions Section */}
                   <div className="space-y-3">
                     {order.deliveryType && (
-                      <div className={`rounded-lg p-4 border ${order.deliveryType === 'delivery' ? 'bg-orange-50 border-orange-200' : 'bg-green-50 border-green-200'}`}>
-                        <p className={`text-xs font-bold uppercase tracking-wide mb-2 ${order.deliveryType === 'delivery' ? 'text-orange-900' : 'text-green-900'}`}>Delivery Type</p>
-                        <p className={`text-sm font-bold ${order.deliveryType === 'delivery' ? 'text-orange-900' : 'text-green-900'}`}>
-                          {order.deliveryType === 'delivery' ? '🚗 Delivery' : '🏪 Pickup'}
+                      <div className={`rounded-lg p-4 border ${order.deliveryType === 'Delivery to My Address' ? 'bg-orange-50 border-orange-200' : 'bg-green-50 border-green-200'}`}>
+                        <p className={`text-xs font-bold uppercase tracking-wide mb-2 ${order.deliveryType === 'Delivery to My Address' ? 'text-orange-900' : 'text-green-900'}`}>Delivery Type</p>
+                        <p className={`text-sm font-bold ${order.deliveryType === 'Delivery to My Address' ? 'text-orange-900' : 'text-green-900'}`}>
+                          {order.deliveryType === 'Delivery to My Address' ? '🚗 Delivery to My Address' : '🏪 Pickup at Restaurant'}
                         </p>
-                        {order.deliveryType === 'delivery' && order.deliveryAddress && (
-                          <div className={`text-xs mt-3 p-2 rounded bg-white border-l-2 ${order.deliveryType === 'delivery' ? 'border-orange-500' : 'border-green-500'}`}>
+                        {order.deliveryType === 'Delivery to My Address' && order.deliveryAddress && (
+                          <div className={`text-xs mt-3 p-2 rounded bg-white border-l-2 ${order.deliveryType === 'Delivery to My Address' ? 'border-orange-500' : 'border-green-500'}`}>
                             <p className="text-gray-600 text-[10px] font-semibold mb-1">📍 Delivery Address</p>
                             <p className="text-gray-900 font-medium break-words">{order.deliveryAddress}</p>
                           </div>
                         )}
                       </div>
                     )}
+
+                    {/* Payment Method Display */}
+                    <div className={`rounded-lg p-4 border ${order.paymentStatus === 'completed' ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
+                      <p className={`text-xs font-bold uppercase tracking-wide mb-2 ${order.paymentStatus === 'completed' ? 'text-green-900' : 'text-yellow-900'}`}>Payment Method</p>
+                      <p className={`text-sm font-bold ${order.paymentStatus === 'completed' ? 'text-green-900' : 'text-yellow-900'}`}>
+                        {order.paymentStatus}
+                      </p>
+                    </div>
 
                     {order.specialInstructions && (
                       <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
@@ -464,30 +475,25 @@ export default function OrdersPage() {
                         <div className="flex items-start gap-3">
                           <span className="inline-block bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center text-lg font-bold flex-shrink-0">{item.quantity}</span>
                           <div>
-                            <p className="text-lg font-bold text-gray-900">{item.name}</p>
+                            <p className="text-lg font-bold text-gray-900">
+                              {item.quantity}x {item.name}
+                              {(item as any).soupOptions && (item as any).soupOptions.length > 0 && (
+                                <span className="text-amber-700 ml-2">with {(item as any).soupOptions.join(', ')}</span>
+                              )}
+                            </p>
                             <p className="text-sm text-gray-600">₦{item.price.toLocaleString()} each</p>
                           </div>
                         </div>
                         <span className="font-bold text-blue-600 text-lg">₦{(item.price * item.quantity).toLocaleString()}</span>
                       </div>
                       
-                      {/* Soup Options - Always visible and prominent */}
+                      {/* Soup Options - Only show if present */}
                       {(item as any).soupOptions && (item as any).soupOptions.length > 0 ? (
                         <div className="mt-4 pt-4 border-t-2 border-amber-300 bg-amber-50 p-4 rounded-lg">
-                          <p className="text-sm font-bold text-amber-800 mb-3 uppercase tracking-wider">Selected Options:</p>
-                          <div className="flex flex-wrap gap-3">
-                            {(item as any).soupOptions.map((option: string) => (
-                              <span key={option} className="inline-flex items-center bg-gradient-to-r from-amber-200 to-orange-200 text-amber-900 text-base font-bold px-5 py-2.5 rounded-full border-2 border-amber-500 shadow-md">
-                                ✓ {option}
-                              </span>
-                            ))}
-                          </div>
+                          <p className="text-sm font-bold text-amber-800 mb-2 uppercase tracking-wider">Additional Options:</p>
+                          <p className="text-sm text-amber-900 font-semibold">{(item as any).soupOptions.join(', ')}</p>
                         </div>
-                      ) : (
-                        <div className="mt-4 pt-4 border-t border-gray-300 bg-gray-50 p-4 rounded-lg">
-                          <p className="text-gray-500 text-sm italic">No soup options selected</p>
-                        </div>
-                      )}
+                      ) : null}
                     </li>
                   ))}
                 </ul>

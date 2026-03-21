@@ -14,7 +14,7 @@ const DELIVERY_FEE = 1500;
 
 export default function CartPage() {
   const { cart, removeFromCart, updateQuantity, clearCart, total } = useCart();
-  const [selectedPayment, setSelectedPayment] = useState('cash');
+  const [selectedPayment, setSelectedPayment] = useState('transfer');
   const [selectedDelivery, setSelectedDelivery] = useState('pickup');
   const deliveryFee = selectedDelivery === 'delivery' ? DELIVERY_FEE : 0;
   const totalAmount = total + deliveryFee;
@@ -108,6 +108,10 @@ export default function CartPage() {
     setOrderProcessing(true);
 
     try {
+      // Map delivery type and payment to display values
+      const deliveryTypeDisplay = selectedDelivery === 'delivery' ? 'Delivery to My Address' : 'Pickup at Restaurant';
+      const paymentMethodDisplay = selectedPayment === 'transfer' ? 'Bank Transfer' : 'Cash on Delivery';
+
       const orderData = {
         customerName: formData.customerName,
         customerPhone: formData.customerPhone,
@@ -116,10 +120,10 @@ export default function CartPage() {
         itemsTotal: total,
         deliveryFee: deliveryFee,
         totalPrice: totalAmount,
-        deliveryType: selectedDelivery,
+        deliveryType: deliveryTypeDisplay,
         deliveryAddress: formData.deliveryAddress || '',
         specialInstructions: formData.specialInstructions,
-        paymentMethod: selectedPayment,
+        paymentMethod: paymentMethodDisplay,
       };
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -234,11 +238,14 @@ export default function CartPage() {
                       {/* Item Details */}
                       <div className="flex-1 min-w-0">
                         <h3 className="font-bold text-sm sm:text-base text-gray-900 line-clamp-2">
-                          {item.name}
+                          {item.quantity}x {item.name}
+                          {(item as any).soupOptions && (item as any).soupOptions.length > 0 && (
+                            <span className="text-amber-700"> with {(item as any).soupOptions.join(', ')}</span>
+                          )}
                         </h3>
                         {(item as any).soupOptions && (item as any).soupOptions.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1.5">
-                            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">With:</span>
+                            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">Options:</span>
                             {(item as any).soupOptions.map((option: string) => (
                               <span key={option} className="text-xs font-bold text-amber-900 bg-amber-100 px-2 py-0.5 rounded border border-amber-300">
                                 {option}
@@ -325,7 +332,28 @@ export default function CartPage() {
 
               {/* Checkout Form */}
               <form onSubmit={handleSubmitOrder} className="space-y-3 sm:space-y-4">
-                {/* Customer Info */}
+                {/* Order Summary */}
+                <Card>
+                  <CardHeader className="pb-2 sm:pb-3">
+                    <CardTitle className="text-sm sm:text-base">Order Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
+                    <div className="flex justify-between">
+                      <span>Items Total</span>
+                      <span>₦{total.toLocaleString()}</span>
+                    </div>
+                    {selectedDelivery === 'delivery' && (
+                      <div className="flex justify-between text-orange-600 font-medium">
+                        <span>Delivery Fee</span>
+                        <span>₦{deliveryFee.toLocaleString()}</span>
+                      </div>
+                    )}
+                    <div className="border-t pt-1.5 sm:pt-2 flex justify-between font-bold text-sm sm:text-base">
+                      <span>Total Amount</span>
+                      <span>₦{totalAmount.toLocaleString()}</span>
+                    </div>
+                  </CardContent>
+                </Card>
                 <Card>
                   <CardHeader className="pb-2 sm:pb-3">
                     <CardTitle className="text-xs sm:text-sm md:text-base">Your Details</CardTitle>
@@ -378,7 +406,7 @@ export default function CartPage() {
                         type="radio"
                         value="pickup"
                         checked={selectedDelivery === 'pickup'}
-                        onChange={(e) => setSelectedDelivery(e.target.value)}
+                        onChange={(e) => handleDeliveryChange(e.target.value)}
                       />
                       <span>Pickup at Restaurant</span>
                     </label>
@@ -394,9 +422,10 @@ export default function CartPage() {
 
                     {selectedDelivery === 'delivery' && (
                       <div>
-                        <label className="text-xs sm:text-sm font-medium">Address</label>
+                        <label className="text-xs sm:text-sm font-medium">Address <span className="text-red-500">*</span></label>
                         <Input
                           type="text"
+                          placeholder="Enter your delivery address"
                           value={formData.deliveryAddress}
                           onChange={(e) =>
                             handleFormDataChange('deliveryAddress', e.target.value)
@@ -414,14 +443,15 @@ export default function CartPage() {
                     <CardTitle className="text-xs sm:text-sm md:text-base">Payment Method</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
-                    <label className="flex items-center gap-2 sm:gap-3">
+                    <label className="flex items-center gap-2 sm:gap-3 opacity-50 cursor-not-allowed">
                       <input
                         type="radio"
                         value="cash"
                         checked={selectedPayment === 'cash'}
-                        onChange={(e) => setSelectedPayment(e.target.value)}
+                        onChange={(e) => alert('Cash on Delivery is unavailable right now. Please use Bank Transfer.')}
+                        disabled
                       />
-                      <span>Cash on Delivery</span>
+                      <span>Cash on Delivery <span className="text-gray-500 text-[10px]">(unavailable right now)</span></span>
                     </label>
                     <label className="flex items-center gap-2 sm:gap-3">
                       <input

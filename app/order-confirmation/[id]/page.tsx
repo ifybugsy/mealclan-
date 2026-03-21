@@ -72,10 +72,11 @@ export default function OrderConfirmationPage() {
     // Build detailed order message
     const itemsList = order?.items
       .map((item) => {
-        let itemText = `${item.quantity}x ${item.name} - ₦${(item.price * item.quantity).toLocaleString()}`;
+        let itemText = `${item.quantity}x ${item.name}`;
         if (item.soupOptions && item.soupOptions.length > 0) {
-          itemText += ` (with ${item.soupOptions.join(', ')})`;
+          itemText += ` with ${item.soupOptions.join(', ')}`;
         }
+        itemText += ` - ₦${(item.price * item.quantity).toLocaleString()}`;
         return itemText;
       })
       .join('\n');
@@ -90,9 +91,9 @@ export default function OrderConfirmationPage() {
       message += `*Delivery Address:*\n${order.deliveryAddress}\n\n`;
     }
     
-    message += `*Delivery Type:* ${order?.deliveryType}\n`;
-    message += `*Total Amount:* ₦${order?.totalPrice.toLocaleString()}\n`;
-    message += `*Payment Method:* ${order?.paymentMethod}\n\n`;
+    message += `*Delivery Type:* ${order?.deliveryType || 'Not specified'}\n`;
+    message += `*Payment Method:* ${order?.paymentMethod || 'Not specified'}\n`;
+    message += `*Total Amount:* ₦${order?.totalPrice.toLocaleString()}\n\n`;
     
     if (order?.specialInstructions) {
       message += `*Special Instructions:*\n${order.specialInstructions}\n\n`;
@@ -147,7 +148,7 @@ export default function OrderConfirmationPage() {
             <CardTitle className="text-sm sm:text-base md:text-lg">Order Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 sm:space-y-4 text-xs sm:text-sm">
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
               <div>
                 <p className="text-[10px] sm:text-xs text-gray-600">Order Number</p>
                 <p className="font-semibold text-sm sm:text-base md:text-lg">{order.orderNumber}</p>
@@ -158,7 +159,11 @@ export default function OrderConfirmationPage() {
               </div>
               <div>
                 <p className="text-[10px] sm:text-xs text-gray-600">Delivery Type</p>
-                <p className="font-semibold capitalize text-xs sm:text-sm">{order.deliveryType}</p>
+                <p className="font-semibold capitalize text-xs sm:text-sm">{order.deliveryType || 'Not specified'}</p>
+              </div>
+              <div>
+                <p className="text-[10px] sm:text-xs text-gray-600">Payment Method</p>
+                <p className="font-semibold capitalize text-xs sm:text-sm">{order.paymentMethod || 'Not specified'}</p>
               </div>
               <div>
                 <p className="text-[10px] sm:text-xs text-gray-600">Status</p>
@@ -174,12 +179,15 @@ export default function OrderConfirmationPage() {
                     <div className="flex justify-between text-[10px] sm:text-xs md:text-sm mb-1">
                       <span className="font-semibold">
                         {item.quantity}x {item.name}
+                        {item.soupOptions && item.soupOptions.length > 0 && (
+                          <span className="text-green-700"> with {item.soupOptions.join(', ')}</span>
+                        )}
                       </span>
                       <span className="font-semibold">₦{(item.price * item.quantity).toLocaleString()}</span>
                     </div>
                     {item.soupOptions && item.soupOptions.length > 0 && (
                       <div className="text-[9px] sm:text-[10px] text-gray-600 mt-1 flex flex-wrap gap-1">
-                        <span className="font-medium">Soup Options:</span>
+                        <span className="font-medium">Options:</span>
                         <span className="text-green-700 font-semibold">{item.soupOptions.join(', ')}</span>
                       </div>
                     )}
@@ -217,7 +225,7 @@ export default function OrderConfirmationPage() {
             <CardTitle className="text-sm sm:text-base md:text-lg">Next Steps</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 sm:space-y-4 text-xs sm:text-sm">
-            {order.paymentMethod === 'transfer' && (settings?.bankAccountNumber || settings?.bankAccountName) && (
+            {order.paymentMethod === 'Bank Transfer' && (settings?.bankAccountNumber || settings?.bankAccountName) && (
               <div className="bg-blue-50 border border-blue-200 rounded p-2 sm:p-4">
                 <p className="font-semibold text-blue-900 mb-1 sm:mb-2 text-xs sm:text-sm">Bank Transfer Payment</p>
                 <p className="text-[10px] sm:text-xs text-blue-800 mb-2 sm:mb-3">
@@ -253,7 +261,7 @@ export default function OrderConfirmationPage() {
               </div>
             )}
 
-            {order.paymentMethod === 'cash' && (
+            {order.paymentMethod === 'Cash on Delivery' && (
               <div className="bg-yellow-50 border border-yellow-200 rounded p-2 sm:p-4">
                 <p className="font-semibold text-yellow-900 mb-1 sm:mb-2 text-xs sm:text-sm">Cash on Delivery</p>
                 <p className="text-[10px] sm:text-xs text-yellow-800">
