@@ -38,6 +38,18 @@ const statusColors: Record<string, string> = {
   cancelled: 'bg-red-100 text-red-800',
 };
 
+const formatDeliveryType = (type: string) => {
+  if (type === 'delivery') return 'Delivery to My Address';
+  if (type === 'pickup') return 'Pickup at Restaurant';
+  return type || 'Not specified';
+};
+
+const formatPaymentMethod = (method: string) => {
+  if (method === 'transfer') return 'Bank Transfer';
+  if (method === 'cash') return 'Cash on Delivery';
+  return method || 'Not specified';
+};
+
 export default function OrdersPage() {
   const [filterStatus, setFilterStatus] = useState('');
   const { orders: realTimeOrders, isConnected } = useRealTimeOrders();
@@ -305,7 +317,7 @@ export default function OrdersPage() {
                         {order.paymentStatus === 'completed' ? '✓ Paid' : '⏳ Pending'}
                       </Badge>
                       <Badge variant="secondary" className="text-xs">
-                        {order.deliveryType || 'N/A'}
+                        {formatDeliveryType(order.deliveryType || '')}
                       </Badge>
                     </div>
                   </div>
@@ -393,13 +405,13 @@ export default function OrdersPage() {
                   {/* Delivery & Instructions Section */}
                   <div className="space-y-3">
                     {order.deliveryType && (
-                      <div className={`rounded-lg p-4 border ${order.deliveryType === 'Delivery to My Address' ? 'bg-orange-50 border-orange-200' : 'bg-green-50 border-green-200'}`}>
-                        <p className={`text-xs font-bold uppercase tracking-wide mb-2 ${order.deliveryType === 'Delivery to My Address' ? 'text-orange-900' : 'text-green-900'}`}>Delivery Type</p>
-                        <p className={`text-sm font-bold ${order.deliveryType === 'Delivery to My Address' ? 'text-orange-900' : 'text-green-900'}`}>
-                          {order.deliveryType === 'Delivery to My Address' ? '🚗 Delivery to My Address' : '🏪 Pickup at Restaurant'}
+                      <div className={`rounded-lg p-4 border ${order.deliveryType === 'delivery' ? 'bg-orange-50 border-orange-200' : 'bg-green-50 border-green-200'}`}>
+                        <p className={`text-xs font-bold uppercase tracking-wide mb-2 ${order.deliveryType === 'delivery' ? 'text-orange-900' : 'text-green-900'}`}>Delivery Type</p>
+                        <p className={`text-sm font-bold ${order.deliveryType === 'delivery' ? 'text-orange-900' : 'text-green-900'}`}>
+                          {formatDeliveryType(order.deliveryType)}
                         </p>
-                        {order.deliveryType === 'Delivery to My Address' && order.deliveryAddress && (
-                          <div className={`text-xs mt-3 p-2 rounded bg-white border-l-2 ${order.deliveryType === 'Delivery to My Address' ? 'border-orange-500' : 'border-green-500'}`}>
+                        {order.deliveryType === 'delivery' && order.deliveryAddress && (
+                          <div className={`text-xs mt-3 p-2 rounded bg-white border-l-2 border-orange-500`}>
                             <p className="text-gray-600 text-[10px] font-semibold mb-1">📍 Delivery Address</p>
                             <p className="text-gray-900 font-medium break-words">{order.deliveryAddress}</p>
                           </div>
@@ -411,7 +423,7 @@ export default function OrdersPage() {
                     <div className={`rounded-lg p-4 border ${order.paymentStatus === 'completed' ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
                       <p className={`text-xs font-bold uppercase tracking-wide mb-2 ${order.paymentStatus === 'completed' ? 'text-green-900' : 'text-yellow-900'}`}>Payment Method</p>
                       <p className={`text-sm font-bold ${order.paymentStatus === 'completed' ? 'text-green-900' : 'text-yellow-900'}`}>
-                        {order.paymentStatus}
+                        {formatPaymentMethod(order.paymentStatus)}
                       </p>
                     </div>
 

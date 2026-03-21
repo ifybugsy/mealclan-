@@ -28,6 +28,18 @@ interface Settings {
   bankAccountName?: string;
 }
 
+const formatDeliveryType = (type: string) => {
+  if (type === 'delivery') return 'Delivery to My Address';
+  if (type === 'pickup') return 'Pickup at Restaurant';
+  return type || 'Not specified';
+};
+
+const formatPaymentMethod = (method: string) => {
+  if (method === 'transfer') return 'Bank Transfer';
+  if (method === 'cash') return 'Cash on Delivery';
+  return method || 'Not specified';
+};
+
 export default function OrderConfirmationPage() {
   const params = useParams();
   const orderId = params.id as string;
@@ -39,20 +51,15 @@ export default function OrderConfirmationPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Use Next.js API route directly
-        console.log('[v0] Confirmation - Fetching order with ID:', orderId);
         const orderRes = await fetch(`/api/orders/${orderId}`);
-        console.log('[v0] Confirmation - Response status:', orderRes.status);
         const orderData = await orderRes.json();
 
-        console.log('[v0] Order fetched:', orderData);
         setOrder(orderData);
-        // Set default settings with hardcoded WhatsApp number
         setSettings({
           whatsappNumber: '08038753508',
         });
       } catch (error) {
-        console.error('[v0] Failed to fetch order data:', error);
+        console.error('Failed to fetch order data:', error);
       } finally {
         setLoading(false);
       }
@@ -94,8 +101,8 @@ export default function OrderConfirmationPage() {
       message += `*Delivery Address:*\n${order.deliveryAddress}\n\n`;
     }
     
-    message += `*Delivery Type:* ${order?.deliveryType || 'Not specified'}\n`;
-    message += `*Payment Method:* ${order?.paymentMethod || 'Not specified'}\n`;
+    message += `*Delivery Type:* ${formatDeliveryType(order?.deliveryType)}\n`;
+    message += `*Payment Method:* ${formatPaymentMethod(order?.paymentMethod)}\n`;
     message += `*Total Amount:* ₦${order?.totalPrice.toLocaleString()}\n\n`;
     
     if (order?.specialInstructions) {
@@ -162,11 +169,11 @@ export default function OrderConfirmationPage() {
               </div>
               <div>
                 <p className="text-[10px] sm:text-xs text-gray-600">Delivery Type</p>
-                <p className="font-semibold capitalize text-xs sm:text-sm">{order.deliveryType || 'Not specified'}</p>
+                <p className="font-semibold text-xs sm:text-sm">{formatDeliveryType(order.deliveryType)}</p>
               </div>
               <div>
                 <p className="text-[10px] sm:text-xs text-gray-600">Payment Method</p>
-                <p className="font-semibold capitalize text-xs sm:text-sm">{order.paymentMethod || 'Not specified'}</p>
+                <p className="font-semibold text-xs sm:text-sm">{formatPaymentMethod(order.paymentMethod)}</p>
               </div>
               <div>
                 <p className="text-[10px] sm:text-xs text-gray-600">Status</p>
@@ -228,7 +235,7 @@ export default function OrderConfirmationPage() {
             <CardTitle className="text-sm sm:text-base md:text-lg">Next Steps</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 sm:space-y-4 text-xs sm:text-sm">
-            {order.paymentMethod === 'Bank Transfer' && (settings?.bankAccountNumber || settings?.bankAccountName) && (
+            {order.paymentMethod === 'transfer' && (settings?.bankAccountNumber || settings?.bankAccountName) && (
               <div className="bg-blue-50 border border-blue-200 rounded p-2 sm:p-4">
                 <p className="font-semibold text-blue-900 mb-1 sm:mb-2 text-xs sm:text-sm">Bank Transfer Payment</p>
                 <p className="text-[10px] sm:text-xs text-blue-800 mb-2 sm:mb-3">
@@ -264,7 +271,7 @@ export default function OrderConfirmationPage() {
               </div>
             )}
 
-            {order.paymentMethod === 'Cash on Delivery' && (
+            {order.paymentMethod === 'cash' && (
               <div className="bg-yellow-50 border border-yellow-200 rounded p-2 sm:p-4">
                 <p className="font-semibold text-yellow-900 mb-1 sm:mb-2 text-xs sm:text-sm">Cash on Delivery</p>
                 <p className="text-[10px] sm:text-xs text-yellow-800">
