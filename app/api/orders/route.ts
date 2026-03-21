@@ -33,6 +33,8 @@ export async function POST(request: NextRequest) {
     const { db } = await connectToDatabase();
     const body = await request.json();
 
+    console.log('[v0] POST /api/orders - Received body:', body);
+
     const order: Order = {
       orderNumber: generateOrderNumber(),
       customerName: body.customerName,
@@ -50,13 +52,16 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date(),
     };
 
+    console.log('[v0] POST /api/orders - Order object before insert:', order);
+
     const result = await db.collection('orders').insertOne(order);
-    return NextResponse.json(
-      { _id: result.insertedId, ...order },
-      { status: 201 }
-    );
+    
+    const response = { _id: result.insertedId, ...order };
+    console.log('[v0] POST /api/orders - Response:', response);
+    
+    return NextResponse.json(response, { status: 201 });
   } catch (error) {
-    console.error('Error creating order:', error);
+    console.error('[v0] Error creating order:', error);
     return NextResponse.json({ error: 'Failed to create order' }, { status: 500 });
   }
 }

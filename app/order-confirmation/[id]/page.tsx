@@ -39,21 +39,24 @@ export default function OrderConfirmationPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-        const orderRes = await fetch(`${apiUrl}/orders/${orderId}`);
+        // Use Next.js API route directly
+        console.log('[v0] Confirmation - Fetching order with ID:', orderId);
+        const orderRes = await fetch(`/api/orders/${orderId}`);
+        console.log('[v0] Confirmation - Response status:', orderRes.status);
         const orderData = await orderRes.json();
 
+        console.log('[v0] Order fetched:', orderData);
         setOrder(orderData);
         // Set default settings with hardcoded WhatsApp number
         setSettings({
           whatsappNumber: '08038753508',
         });
       } catch (error) {
-        console.error('Failed to fetch order data:', error);
+        console.error('[v0] Failed to fetch order data:', error);
       } finally {
         setLoading(false);
       }
-    };
+    }
 
     fetchData();
   }, [orderId]);
