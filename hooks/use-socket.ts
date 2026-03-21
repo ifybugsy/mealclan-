@@ -226,29 +226,27 @@ export function useRealTimeCartUpdates(
   return { cartUpdates, isConnected };
 }
 
-let socketInstance: any = null;
-
 export const joinAdminRoom = () => {
-  if (!socketInstance) {
-    socketInstance = initializeSocket();
-  }
+  // Use the same socket instance from socket.ts (singleton pattern)
+  const s = initializeSocket();
   
-  if (socketInstance?.connected) {
-    console.log('[joinAdminRoom] Emitting joinAdminRoom event');
-    socketInstance?.emit('joinAdminRoom');
+  if (s.connected) {
+    console.log('[v0] joinAdminRoom - Emitting joinAdminRoom on socket:', s.id);
+    s.emit('joinAdminRoom');
   } else {
-    console.warn('[joinAdminRoom] Socket not connected, retrying...');
-    // Retry when socket connects
-    socketInstance?.once('connect', () => {
-      console.log('[joinAdminRoom] Socket connected, emitting joinAdminRoom');
-      socketInstance?.emit('joinAdminRoom');
+    console.warn('[v0] joinAdminRoom - Socket not connected, waiting for connection...');
+    // Retry when socket connects - only once
+    s.once('connect', () => {
+      console.log('[v0] joinAdminRoom - Socket connected, emitting joinAdminRoom');
+      s.emit('joinAdminRoom');
     });
   }
 };
 
 export const leaveAdminRoom = () => {
-  if (socketInstance?.connected) {
-    console.log('[leaveAdminRoom] Emitting leaveAdminRoom event');
-    socketInstance?.emit('leaveAdminRoom');
+  const s = initializeSocket();
+  if (s.connected) {
+    console.log('[v0] leaveAdminRoom - Emitting leaveAdminRoom');
+    s.emit('leaveAdminRoom');
   }
 };
