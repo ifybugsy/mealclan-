@@ -69,7 +69,7 @@ export default function OrderConfirmationPage() {
   }, [orderId]);
 
   const handleCopyWhatsApp = () => {
-    if (settings?.whatsappNumber) {
+    if (typeof navigator !== 'undefined' && navigator.clipboard && settings?.whatsappNumber) {
       navigator.clipboard.writeText(settings.whatsappNumber);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -116,7 +116,11 @@ export default function OrderConfirmationPage() {
       ? '234' + adminWhatsAppNumber.slice(1)
       : adminWhatsAppNumber;
     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    
+    // Only open window on client side
+    if (typeof window !== 'undefined') {
+      window.open(whatsappUrl, '_blank');
+    }
   };
 
   if (loading) {
@@ -253,9 +257,11 @@ export default function OrderConfirmationPage() {
                       <p className="text-[9px] sm:text-xs font-mono font-bold flex-1">{settings.bankAccountNumber}</p>
                       <button
                         onClick={() => {
-                          navigator.clipboard.writeText(settings.bankAccountNumber || '');
-                          setCopied(true);
-                          setTimeout(() => setCopied(false), 2000);
+                          if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                            navigator.clipboard.writeText(settings.bankAccountNumber || '');
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 2000);
+                          }
                         }}
                         className="p-1 hover:bg-gray-100 rounded transition-colors"
                       >

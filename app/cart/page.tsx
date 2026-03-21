@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '@/lib/cart-context';
@@ -12,6 +13,7 @@ import { ArrowLeft, Trash2, Plus, Minus, Copy, MessageCircle } from 'lucide-reac
 const DELIVERY_FEE = 1500;
 
 export default function CartPage() {
+  const router = useRouter();
   const { cart, removeFromCart, updateQuantity, clearCart, total } = useCart();
   const [selectedPayment, setSelectedPayment] = useState('transfer');
   const [selectedDelivery, setSelectedDelivery] = useState('pickup');
@@ -136,8 +138,9 @@ export default function CartPage() {
         setOrderSuccess(true);
         clearCart();
 
+        // Use router.push for Next.js navigation instead of window.location
         setTimeout(() => {
-          window.location.href = `/order-confirmation/${order._id}`;
+          router.push(`/order-confirmation/${order._id}`);
         }, 2000);
       } else {
         alert('Failed to place order. Please try again.');
@@ -413,7 +416,7 @@ export default function CartPage() {
 
                     {selectedPayment === 'transfer' && (
                       <div className="space-y-3 sm:space-y-4 bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-200">
-                        <div className="grid grid-cols-1 gap-3 sm:gap-4">
+                        <div className="space-y-3 sm:space-y-4">
                           {paymentDetails.bankName && (
                             <div>
                               <p className="text-[10px] sm:text-xs font-semibold text-gray-700 mb-1 uppercase">Bank Name</p>
@@ -424,8 +427,8 @@ export default function CartPage() {
                           {paymentDetails.accountNumber && (
                             <div>
                               <p className="text-[10px] sm:text-xs font-semibold text-gray-700 mb-1 uppercase">Account Number</p>
-                              <div className="flex items-center gap-2 bg-white p-2 sm:p-3 rounded border">
-                                <span className="text-xs sm:text-sm font-mono font-bold flex-1">{paymentDetails.accountNumber}</span>
+                              <div className="flex items-center gap-2 bg-white p-2 sm:p-3 rounded border min-w-0">
+                                <span className="text-xs sm:text-sm font-mono font-bold flex-1 truncate">{paymentDetails.accountNumber}</span>
                                 <button
                                   type="button"
                                   onClick={() => {
@@ -435,7 +438,7 @@ export default function CartPage() {
                                       setTimeout(() => setCopiedField(null), 2000);
                                     }
                                   }}
-                                  className="p-1.5 hover:bg-gray-100 rounded"
+                                  className="p-1.5 hover:bg-gray-100 rounded flex-shrink-0"
                                 >
                                   <Copy className="w-3.5 h-3.5 text-blue-600" />
                                 </button>
@@ -456,10 +459,12 @@ export default function CartPage() {
                               href={`https://wa.me/${paymentDetails.whatsappNumber.replace(/\D/g, '')}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white p-2 sm:p-3 rounded font-medium text-xs sm:text-sm"
+                              className="block w-full text-center bg-green-500 hover:bg-green-600 text-white p-2 sm:p-3 rounded font-medium text-xs sm:text-sm"
                             >
-                              <MessageCircle className="w-4 h-4" />
-                              <span>WhatsApp: {paymentDetails.whatsappNumber}</span>
+                              <span className="inline-flex items-center justify-center gap-2">
+                                <MessageCircle className="w-4 h-4" />
+                                <span>WhatsApp: {paymentDetails.whatsappNumber}</span>
+                              </span>
                             </a>
                           )}
                         </div>
