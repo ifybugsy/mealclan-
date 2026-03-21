@@ -16,10 +16,10 @@ export default function CartPage() {
   const { cart, removeFromCart, updateQuantity, clearCart, total } = useCart();
   const [selectedPayment, setSelectedPayment] = useState('transfer');
   const [selectedDelivery, setSelectedDelivery] = useState('pickup');
-  const deliveryFee = selectedDelivery === 'delivery' ? DELIVERY_FEE : 0;
+  const deliveryFee = selectedDelivery === 'delivery' ? DELIVERY_FEE : 0;The 
   const totalAmount = total + deliveryFee;
   const [formData, setFormData] = useState({
-    customerName: '',
+    customerName: '',i am 
     customerPhone: '',
     customerEmail: '',
     deliveryAddress: '',
