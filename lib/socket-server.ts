@@ -16,42 +16,50 @@ export function initializeSocketServer(httpServer: HTTPServer): SocketIOServer {
     transports: ['websocket', 'polling'],
   });
 
-  // Admin namespace for dashboard and order management
-  const adminNamespace = io.of('/admin');
+  // Main namespace also handles admin room joins
+  const adminRoom = 'admin-room';
 
-  adminNamespace.on('connection', (socket) => {
-    console.log(`[Socket] Admin connected: ${socket.id}`);
+  // Main namespace for real-time updates (customers and general events)
+  io.on('connection', (socket) => {
+    console.log(`[Socket] Client connected to main namespace: ${socket.id}`);
 
+    // Admin room join/leave
     socket.on('joinAdminRoom', () => {
-      socket.join('admin-room');
+      socket.join(adminRoom);
       console.log(`[Socket] Admin ${socket.id} joined admin-room`);
     });
 
     socket.on('leaveAdminRoom', () => {
-      socket.leave('admin-room');
+      socket.leave(adminRoom);
       console.log(`[Socket] Admin ${socket.id} left admin-room`);
     });
 
-    socket.on('updateOrderStatus', async (data: { orderId: string; status: string }) => {
-      console.log(`[Socket] Order status update: ${data.orderId} -> ${data.status}`);
+    // Listen for cart updates from customers during checkout
+    socket.on('cartUpdate', (data: any) => {
+      console.log(`[v0] Socket Server - Cart update received from client ${socket.id}:`, JSON.stringify(data, null, 2));
       
-      // Broadcast to all admins
-      adminNamespace.to('admin-room').emit('orderStatusUpdate', {
-        orderId: data.orderId,
-        status: data.status,
-        updatedAt: new Date().toISOString(),
-      });
+      const broadcastData = {
+        ...data,
+        timestamp: new Date().toISOString(),
+        clientId: socket.id,
+      };
+      
+      console.log(`[v0] Socket Server - Broadcasting to admin-room:`, JSON.stringify(broadcastData, null, 2));
+      
+      // Broadcast to admin room so they see real-time checkout updates
+      io.to(adminRoom).emit('cartUpdate', broadcastData);
+      
+      console.log(`[v0] Socket Server - Cart update SENT to admin-room`);
+    });
 
-      // Notify customer about their order
-      io!.to(`order-${data.orderId}`).emit('orderStatusUpdate', {
-        orderId: data.orderId,
-        status: data.status,
-        updatedAt: new Date().toISOString(),
-      });
+    // Listen for menu updates
+    socket.on('menuUpdate', (data: any) => {
+      console.log(`[Socket] Menu update received:`, data);
+      io!.emit('menuUpdate', data);
     });
 
     socket.on('disconnect', () => {
-      console.log(`[Socket] Admin disconnected: ${socket.id}`);
+      console.log(`[Socket] Client disconnected from main namespace: ${socket.id}`);
     });
   });
 
@@ -91,7 +99,7 @@ export function broadcastNewOrder(
   itemCount: number,
   totalPrice: number
 ) {
-  io.of('/admin').to('admin-room').emit('newOrder', {
+  io.to('admin-room').emit('newOrder', {
     orderId,
     customerName,
     itemCount,
@@ -104,7 +112,7 @@ export function broadcastDashboardStatsUpdate(
   io: SocketIOServer,
   stats: { total: number; pending: number; completed: number; revenue: number }
 ) {
-  io.of('/admin').to('admin-room').emit('dashboardStatsUpdate', stats);
+  io.to('admin-room').emit('dashboardStatsUpdate', stats);
 }
 
 export function broadcastOrderStatusUpdate(
@@ -112,13 +120,13 @@ export function broadcastOrderStatusUpdate(
   orderId: string,
   status: string
 ) {
-  io.of('/admin').to('admin-room').emit('orderStatusUpdate', {
+  io.to('admin-room').emit('orderStatusUpdate', {
     orderId,
     status,
     updatedAt: new Date().toISOString(),
   });
 
-  io.of('/customer').to(`order-${orderId}`).emit('orderStatusUpdate', {
+  io.to(`order-${orderId}`).emit('orderStatusUpdate', {
     orderId,
     status,
     updatedAt: new Date().toISOString(),
@@ -130,7 +138,7 @@ export function broadcastMenuUpdate(
   itemId: string,
   changes: Record<string, any>
 ) {
-  io.of('/admin').emit('menuUpdate', {
+  io.emit('menuUpdate', {
     itemId,
     changes,
     timestamp: new Date().toISOString(),
@@ -141,11 +149,7 @@ export function broadcastMenuItemAdded(
   io: SocketIOServer,
   item: Record<string, any>
 ) {
-  // Broadcast to both admin and customer namespaces
-  io.of('/admin').emit('menuItemAdded', {
-    item,
-    timestamp: new Date().toISOString(),
-  });
+  // Broadcast to all clients
   io.emit('menuItemAdded', {
     item,
     timestamp: new Date().toISOString(),
@@ -158,12 +162,7 @@ export function broadcastMenuItemUpdated(
   itemId: string,
   item: Record<string, any>
 ) {
-  // Broadcast to both admin and customer namespaces
-  io.of('/admin').emit('menuItemUpdated', {
-    itemId,
-    item,
-    timestamp: new Date().toISOString(),
-  });
+  // Broadcast to all clients
   io.emit('menuItemUpdated', {
     itemId,
     item,
@@ -176,14 +175,22 @@ export function broadcastMenuItemDeleted(
   io: SocketIOServer,
   itemId: string
 ) {
-  // Broadcast to both admin and customer namespaces
-  io.of('/admin').emit('menuItemDeleted', {
-    itemId,
-    timestamp: new Date().toISOString(),
-  });
+  // Broadcast to all clients
   io.emit('menuItemDeleted', {
     itemId,
     timestamp: new Date().toISOString(),
   });
   console.log('[Socket] Menu item deleted broadcast:', itemId);
+}
+
+export function broadcastCartUpdate(
+  io: SocketIOServer,
+  data: Record<string, any>
+) {
+  // Broadcast to admin room for real-time checkout preview
+  io.of('/admin').to('admin-room').emit('cartUpdate', {
+    ...data,
+    timestamp: new Date().toISOString(),
+  });
+  console.log('[Socket] Cart update broadcast:', data);
 }

@@ -198,28 +198,30 @@ export function useRealTimeCartUpdates(
   onCartUpdate?: (data: any) => void
 ) {
   const { socket, isConnected } = useSocket();
-  const [cartUpdates, setCartUpdates] = useState<any>({});
+  const [cartUpdates, setCartUpdates] = useState<any>(null);
 
   useEffect(() => {
     if (!socket) {
-      console.log('[useRealTimeCartUpdates] Socket not initialized yet');
+      console.log('[v0] useRealTimeCartUpdates - Socket not initialized yet');
       return;
     }
 
     const handleCartUpdate = (data: any) => {
-      console.log('[useRealTimeCartUpdates] Cart update received:', data);
+      console.log('[v0] useRealTimeCartUpdates - RECEIVED cartUpdate event:', JSON.stringify(data, null, 2));
+      console.log('[v0] useRealTimeCartUpdates - Setting cartUpdates state');
       setCartUpdates(data);
       onCartUpdate?.(data);
     };
 
-    // Listen for cart updates
+    // Listen for cart updates from admin room
     socket.on('cartUpdate', handleCartUpdate);
-    console.log('[useRealTimeCartUpdates] Listening for cartUpdate events');
+    console.log('[v0] useRealTimeCartUpdates - Registered listener for cartUpdate events on socket:', socket.id);
 
     return () => {
+      console.log('[v0] useRealTimeCartUpdates - Removing cartUpdate listener');
       socket.off('cartUpdate', handleCartUpdate);
     };
-  }, [socket]);
+  }, [socket, onCartUpdate]);
 
   return { cartUpdates, isConnected };
 }

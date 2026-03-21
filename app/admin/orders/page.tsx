@@ -92,18 +92,30 @@ export default function OrdersPage() {
 
   useEffect(() => {
     // Handle real-time cart updates from customer checkout
+    console.log('[v0] Orders page - cartUpdates changed:', cartUpdates);
+    
     if (cartUpdates) {
-      setLiveOrderData((prev: any) => {
-        const updated = { ...prev };
-        if (cartUpdates.type === 'phone') {
-          updated.phone = cartUpdates.value;
-        } else if (cartUpdates.type === 'deliveryAddress') {
-          updated.deliveryAddress = cartUpdates.value;
-        } else if (cartUpdates.type === 'soupOptions') {
-          updated.soupOptions = cartUpdates.value || [];
-        }
-        return updated;
-      });
+      if (Object.keys(cartUpdates).length > 0) {
+        console.log('[v0] Orders page - Processing cartUpdate with keys:', Object.keys(cartUpdates));
+        
+        setLiveOrderData((prev: any) => {
+          const updated = { ...prev };
+          
+          if (cartUpdates.type === 'phone') {
+            console.log('[v0] ORDERS PAGE - Updating PHONE to:', cartUpdates.value);
+            updated.phone = cartUpdates.value || '';
+          } else if (cartUpdates.type === 'deliveryAddress') {
+            console.log('[v0] ORDERS PAGE - Updating DELIVERY ADDRESS to:', cartUpdates.value);
+            updated.deliveryAddress = cartUpdates.value || '';
+          } else if (cartUpdates.type === 'soupOptions') {
+            console.log('[v0] ORDERS PAGE - Updating SOUP OPTIONS to:', cartUpdates.value);
+            updated.soupOptions = Array.isArray(cartUpdates.value) ? cartUpdates.value : [];
+          }
+          
+          console.log('[v0] ORDERS PAGE - New liveOrderData state:', updated);
+          return updated;
+        });
+      }
     }
   }, [cartUpdates]);
 

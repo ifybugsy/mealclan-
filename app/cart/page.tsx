@@ -70,18 +70,23 @@ export default function CartPage() {
     if (socket) {
       const emitUpdate = () => {
         if (socket.connected) {
-          console.log(`[v0] Emitting ${field} update:`, value);
+          console.log(`[v0] Cart page - Emitting ${field} update:`, value);
           if (field === 'customerPhone') {
             socket.emit('cartUpdate', { type: 'phone', value });
           } else if (field === 'deliveryAddress') {
+            // Always emit delivery address when it changes (only shows when delivery is selected anyway)
+            console.log('[v0] Emitting DELIVERY ADDRESS:', value);
             socket.emit('cartUpdate', { type: 'deliveryAddress', value });
           }
         } else {
           // Retry when connected
+          console.log('[v0] Socket not connected, waiting for connection...');
           socket.once('connect', emitUpdate);
         }
       };
       emitUpdate();
+    } else {
+      console.log('[v0] Socket not initialized yet');
     }
   };
 
