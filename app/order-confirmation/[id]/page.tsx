@@ -50,16 +50,31 @@ export default function OrderConfirmationPage() {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!orderId) return;
+
       try {
-        const orderRes = await fetch(`/api/orders/${orderId}`);
+        const [orderRes, settingsRes] = await Promise.all([
+          fetch(`/api/orders/${orderId}`),
+          fetch('/api/settings')
+        ]);
+
         const orderData = await orderRes.json();
+        const settingsData = await settingsRes.json();
 
         setOrder(orderData);
         setSettings({
-          whatsappNumber: '08038753508',
+          whatsappNumber: settingsData.whatsappNumber || '08038753508',
+          bankAccountNumber: settingsData.bankAccountNumber || '',
+          bankAccountName: settingsData.bankAccountName || '',
         });
       } catch (error) {
-        console.error('Failed to fetch order data:', error);
+        console.error('Failed to fetch data:', error);
+        // Set default settings on error
+        setSettings({
+          whatsappNumber: '08038753508',
+          bankAccountNumber: '',
+          bankAccountName: '',
+        });
       } finally {
         setLoading(false);
       }

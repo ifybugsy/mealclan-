@@ -427,8 +427,8 @@ export default function CartPage() {
                           {paymentDetails.accountNumber && (
                             <div>
                               <p className="text-[10px] sm:text-xs font-semibold text-gray-700 mb-1 uppercase">Account Number</p>
-                              <div className="flex items-center gap-2 bg-white p-2 sm:p-3 rounded border min-w-0">
-                                <span className="text-xs sm:text-sm font-mono font-bold flex-1 truncate">{paymentDetails.accountNumber}</span>
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2 bg-white p-2 sm:p-3 rounded border">
+                                <span className="text-xs sm:text-sm font-mono font-bold break-all sm:flex-1">{paymentDetails.accountNumber}</span>
                                 <button
                                   type="button"
                                   onClick={() => {
