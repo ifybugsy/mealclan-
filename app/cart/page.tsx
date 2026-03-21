@@ -122,20 +122,12 @@ export default function CartPage() {
         paymentMethod: selectedPayment,
       };
 
-      console.log('[v0] Cart - Order data being sent:', {
-        deliveryType: selectedDelivery,
-        deliveryAddress: formData.deliveryAddress,
-        customerPhone: formData.customerPhone,
-      });
-
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
       const response = await fetch(`${apiUrl}/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData),
       });
-
-      console.log('[v0] Cart - API response status:', response.status);
 
       if (response.ok) {
         const order = await response.json();
@@ -206,7 +198,8 @@ export default function CartPage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8 md:py-10">
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">Your Cart</h1>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent mb-2">Mealclan Services</h1>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">Your Cart</h2>
           <p className="text-sm text-gray-600 mt-2">Review and complete your order</p>
         </div>
 

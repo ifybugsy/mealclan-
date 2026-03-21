@@ -43,10 +43,6 @@ export default function OrderConfirmationPage() {
         const orderRes = await fetch(`${apiUrl}/orders/${orderId}`);
         const orderData = await orderRes.json();
 
-        console.log('[v0] Confirmation - Fetched order data:', orderData);
-        console.log('[v0] Confirmation - Delivery address:', orderData.deliveryAddress);
-        console.log('[v0] Confirmation - Delivery type:', orderData.deliveryType);
-
         setOrder(orderData);
         // Set default settings with hardcoded WhatsApp number
         setSettings({
