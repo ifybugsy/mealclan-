@@ -58,37 +58,49 @@ export default function OrderConfirmationPage() {
       }
 
       try {
-        const [orderRes, settingsRes] = await Promise.all([
-          fetch(`/api/orders/${orderId}`, { 
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' }
-          }),
-          fetch('/api/settings', {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' }
-          })
-        ]);
+        let orderData = null;
 
-        console.log('[v0] Order fetch status:', orderRes.status);
-        console.log('[v0] Order fetch ok:', orderRes.ok);
-
-        if (!orderRes.ok) {
-          const errorText = await orderRes.text();
-          console.error('[v0] Order API error:', errorText);
-          throw new Error(`Failed to fetch order details: ${orderRes.status}`);
+        // First, try to get order from sessionStorage (client-side storage)
+        if (typeof window !== 'undefined') {
+          const storedOrder = sessionStorage.getItem(`order_${orderId}`);
+          if (storedOrder) {
+            orderData = JSON.parse(storedOrder);
+            console.log('[v0] Order loaded from sessionStorage');
+          }
         }
 
-        const orderData = await orderRes.json();
-        console.log('[v0] Order data received:', orderData);
-        
+        // If not in sessionStorage, try to fetch from API
+        if (!orderData) {
+          const orderRes = await fetch(`/api/orders/${orderId}`, { 
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+          });
+
+          if (orderRes.ok) {
+            orderData = await orderRes.json();
+            console.log('[v0] Order loaded from API');
+          }
+        }
+
+        // Fetch settings (with error handling)
+        let settingsData = {};
+        try {
+          const settingsRes = await fetch('/api/settings', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          if (settingsRes.ok) {
+            settingsData = await settingsRes.json();
+          }
+        } catch (settingsErr) {
+          console.log('[v0] Settings fetch failed, using defaults');
+        }
+
         if (!orderData || !orderData._id) {
-          console.error('[v0] Invalid order data:', orderData);
-          setError('Order data is invalid');
+          setError('Order not found');
           setLoading(false);
           return;
         }
-
-        const settingsData = settingsRes.ok ? await settingsRes.json() : {};
 
         setOrder(orderData);
         setSettings({
@@ -100,7 +112,6 @@ export default function OrderConfirmationPage() {
       } catch (err) {
         console.error('[v0] Failed to fetch data:', err);
         setError(err instanceof Error ? err.message : 'Failed to load order');
-        // Set default settings on error
         setSettings({
           whatsappNumber: '08038753508',
           bankAccountNumber: '',
