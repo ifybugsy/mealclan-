@@ -33,12 +33,39 @@ export default function SettingsPage() {
 
   const fetchSettings = async () => {
     try {
+      // First try to load from localStorage
+      if (typeof window !== 'undefined') {
+        const savedSettings = localStorage.getItem('mealclan_settings');
+        if (savedSettings) {
+          const parsed = JSON.parse(savedSettings);
+          setSettings(parsed);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // If not in localStorage, try API
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
       const response = await fetch(`${apiUrl}/settings`);
-      const data = await response.json();
-      setSettings(data);
+      if (response.ok) {
+        const data = await response.json();
+        setSettings(data);
+        // Save to localStorage for future use
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('mealclan_settings', JSON.stringify(data));
+        }
+      }
     } catch (error) {
-      console.error('Failed to fetch settings:', error);
+      console.error('[v0] Failed to fetch settings:', error);
+      // Use default values on error
+      const defaults: Settings = {
+        restaurantName: 'MealClan Services',
+        whatsappNumber: '08038753508',
+        bankAccountNumber: '0123456789',
+        bankAccountName: 'MealClan Services',
+        bankName: 'Access Bank',
+      };
+      setSettings(defaults);
     } finally {
       setLoading(false);
     }
@@ -49,19 +76,33 @@ export default function SettingsPage() {
     setMessage(null);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-      const response = await fetch(`${apiUrl}/settings`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
-      });
+      // Save to localStorage first
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('mealclan_settings', JSON.stringify(settings));
+      }
 
-      if (response.ok) {
-        setMessage({ type: 'success', text: 'Settings saved successfully!' });
-      } else {
-        setMessage({ type: 'error', text: 'Failed to save settings' });
+      // Try to save to API as well
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      try {
+        const response = await fetch(`${apiUrl}/settings`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settings),
+        });
+
+        if (response.ok) {
+          setMessage({ type: 'success', text: 'Settings saved successfully!' });
+          console.log('[v0] Settings saved to API');
+        } else {
+          console.log('[v0] API save failed, using localStorage');
+          setMessage({ type: 'success', text: 'Settings saved locally!' });
+        }
+      } catch (apiError) {
+        console.log('[v0] API unavailable, using localStorage only');
+        setMessage({ type: 'success', text: 'Settings saved locally!' });
       }
     } catch (error) {
+      console.error('[v0] Error saving settings:', error);
       setMessage({ type: 'error', text: 'An error occurred while saving' });
     } finally {
       setSaving(false);

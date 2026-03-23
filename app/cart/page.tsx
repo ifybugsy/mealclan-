@@ -56,6 +56,23 @@ export default function CartPage() {
 
     const fetchPaymentDetails = async () => {
       try {
+        // First try localStorage
+        if (typeof window !== 'undefined') {
+          const savedSettings = localStorage.getItem('mealclan_settings');
+          if (savedSettings) {
+            const parsed = JSON.parse(savedSettings);
+            setPaymentDetails({
+              accountNumber: parsed.bankAccountNumber || '0123456789',
+              accountName: parsed.bankAccountName || 'MealClan Services',
+              bankName: parsed.bankName || 'Access Bank',
+              whatsappNumber: parsed.whatsappNumber || '08038753508',
+            });
+            console.log('[v0] Loaded payment details from localStorage');
+            return;
+          }
+        }
+
+        // If not in localStorage, try API
         const response = await fetch('/api/settings');
         if (response.ok) {
           const data = await response.json();
@@ -65,6 +82,10 @@ export default function CartPage() {
             bankName: data.bankName || 'Access Bank',
             whatsappNumber: data.whatsappNumber || '08038753508',
           });
+          // Cache to localStorage
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('mealclan_settings', JSON.stringify(data));
+          }
         } else {
           throw new Error('Settings fetch failed');
         }
@@ -82,9 +103,30 @@ export default function CartPage() {
     initSocket();
     fetchPaymentDetails();
 
+    // Listen for localStorage changes (settings updated from admin panel)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'mealclan_settings' && e.newValue) {
+        const updatedSettings = JSON.parse(e.newValue);
+        setPaymentDetails({
+          accountNumber: updatedSettings.bankAccountNumber || '0123456789',
+          accountName: updatedSettings.bankAccountName || 'MealClan Services',
+          bankName: updatedSettings.bankName || 'Access Bank',
+          whatsappNumber: updatedSettings.whatsappNumber || '08038753508',
+        });
+        console.log('[v0] Payment details updated from settings');
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', handleStorageChange);
+    }
+
     return () => {
       if (s && typeof s.disconnect === 'function') {
         s.disconnect();
+      }
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('storage', handleStorageChange);
       }
     };
   }, []);
