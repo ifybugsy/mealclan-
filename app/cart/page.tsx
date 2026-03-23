@@ -108,9 +108,9 @@ export default function CartPage() {
       if (e.key === 'mealclan_settings' && e.newValue) {
         const updatedSettings = JSON.parse(e.newValue);
         setPaymentDetails({
-          accountNumber: updatedSettings.bankAccountNumber || '0123456789',
+          accountNumber: updatedSettings.bankAccountNumber || '8244106073',
           accountName: updatedSettings.bankAccountName || 'MealClan Services',
-          bankName: updatedSettings.bankName || 'Access Bank',
+          bankName: updatedSettings.bankName || 'MONIE POINT',
           whatsappNumber: updatedSettings.whatsappNumber || '08038753508',
         });
         console.log('[v0] Payment details updated from settings');
