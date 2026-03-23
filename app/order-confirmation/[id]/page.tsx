@@ -59,17 +59,30 @@ export default function OrderConfirmationPage() {
 
       try {
         const [orderRes, settingsRes] = await Promise.all([
-          fetch(`/api/orders/${orderId}`),
-          fetch('/api/settings')
+          fetch(`/api/orders/${orderId}`, { 
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+          }),
+          fetch('/api/settings', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+          })
         ]);
 
+        console.log('[v0] Order fetch status:', orderRes.status);
+        console.log('[v0] Order fetch ok:', orderRes.ok);
+
         if (!orderRes.ok) {
-          throw new Error('Failed to fetch order details');
+          const errorText = await orderRes.text();
+          console.error('[v0] Order API error:', errorText);
+          throw new Error(`Failed to fetch order details: ${orderRes.status}`);
         }
 
         const orderData = await orderRes.json();
+        console.log('[v0] Order data received:', orderData);
         
         if (!orderData || !orderData._id) {
+          console.error('[v0] Invalid order data:', orderData);
           setError('Order data is invalid');
           setLoading(false);
           return;
@@ -85,7 +98,7 @@ export default function OrderConfirmationPage() {
         });
         setError(null);
       } catch (err) {
-        console.error('Failed to fetch data:', err);
+        console.error('[v0] Failed to fetch data:', err);
         setError(err instanceof Error ? err.message : 'Failed to load order');
         // Set default settings on error
         setSettings({

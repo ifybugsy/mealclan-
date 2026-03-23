@@ -417,6 +417,13 @@ export default function CartPage() {
                     {selectedPayment === 'transfer' && (
                       <div className="space-y-3 sm:space-y-4 bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-200">
                         <div className="space-y-3 sm:space-y-4">
+                          {paymentDetails.accountName && (
+                            <div>
+                              <p className="text-[10px] sm:text-xs font-semibold text-gray-700 mb-1 uppercase">Account Holder</p>
+                              <p className="text-xs sm:text-sm bg-white p-2 sm:p-3 rounded font-bold">{paymentDetails.accountName}</p>
+                            </div>
+                          )}
+
                           {paymentDetails.bankName && (
                             <div>
                               <p className="text-[10px] sm:text-xs font-semibold text-gray-700 mb-1 uppercase">Bank Name</p>
@@ -445,27 +452,6 @@ export default function CartPage() {
                               </div>
                               {copiedField === 'account' && <p className="text-[10px] text-green-600 font-medium">Copied!</p>}
                             </div>
-                          )}
-
-                          {paymentDetails.accountName && (
-                            <div>
-                              <p className="text-[10px] sm:text-xs font-semibold text-gray-700 mb-1 uppercase">Account Holder</p>
-                              <p className="text-xs sm:text-sm bg-white p-2 sm:p-3 rounded font-bold">{paymentDetails.accountName}</p>
-                            </div>
-                          )}
-
-                          {paymentDetails.whatsappNumber && (
-                            <a
-                              href={`https://wa.me/${paymentDetails.whatsappNumber.replace(/\D/g, '')}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="block w-full text-center bg-green-500 hover:bg-green-600 text-white p-2 sm:p-3 rounded font-medium text-xs sm:text-sm"
-                            >
-                              <span className="inline-flex items-center justify-center gap-2">
-                                <MessageCircle className="w-4 h-4" />
-                                <span>WhatsApp: {paymentDetails.whatsappNumber}</span>
-                              </span>
-                            </a>
                           )}
                         </div>
                       </div>
