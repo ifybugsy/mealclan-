@@ -57,18 +57,23 @@ export default function CartPage() {
     const fetchPaymentDetails = async () => {
       try {
         const response = await fetch('/api/settings');
-        const data = await response.json();
-        setPaymentDetails({
-          accountNumber: data.bankAccountNumber || '',
-          accountName: data.bankAccountName || 'MealClan',
-          bankName: data.bankName || '',
-          whatsappNumber: data.whatsappNumber || '08038753508',
-        });
+        if (response.ok) {
+          const data = await response.json();
+          setPaymentDetails({
+            accountNumber: data.bankAccountNumber || '0123456789',
+            accountName: data.bankAccountName || 'MealClan Services',
+            bankName: data.bankName || 'Access Bank',
+            whatsappNumber: data.whatsappNumber || '08038753508',
+          });
+        } else {
+          throw new Error('Settings fetch failed');
+        }
       } catch (error) {
+        console.log('[v0] Using default payment details');
         setPaymentDetails({
-          accountNumber: '',
-          accountName: 'MealClan',
-          bankName: '',
+          accountNumber: '0123456789',
+          accountName: 'MealClan Services',
+          bankName: 'Access Bank',
           whatsappNumber: '08038753508',
         });
       }
