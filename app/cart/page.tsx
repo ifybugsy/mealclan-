@@ -62,9 +62,9 @@ export default function CartPage() {
           if (savedSettings) {
             const parsed = JSON.parse(savedSettings);
             setPaymentDetails({
-              accountNumber: parsed.bankAccountNumber || '0123456789',
+              accountNumber: parsed.bankAccountNumber || '8244106073',
               accountName: parsed.bankAccountName || 'MealClan Services',
-              bankName: parsed.bankName || 'Access Bank',
+              bankName: parsed.bankName || 'MONIE POINT',
               whatsappNumber: parsed.whatsappNumber || '08038753508',
             });
             console.log('[v0] Loaded payment details from localStorage');
@@ -77,9 +77,9 @@ export default function CartPage() {
         if (response.ok) {
           const data = await response.json();
           setPaymentDetails({
-            accountNumber: data.bankAccountNumber || '0123456789',
+            accountNumber: data.bankAccountNumber || '8244106073',
             accountName: data.bankAccountName || 'MealClan Services',
-            bankName: data.bankName || 'Access Bank',
+            bankName: data.bankName || 'MONIE POINT',
             whatsappNumber: data.whatsappNumber || '08038753508',
           });
           // Cache to localStorage
@@ -92,9 +92,9 @@ export default function CartPage() {
       } catch (error) {
         console.log('[v0] Using default payment details');
         setPaymentDetails({
-          accountNumber: '0123456789',
+          accountNumber: '8244106073',
           accountName: 'MealClan Services',
-          bankName: 'Access Bank',
+          bankName: 'MONIE POINT',
           whatsappNumber: '08038753508',
         });
       }
